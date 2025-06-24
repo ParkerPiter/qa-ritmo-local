@@ -16,19 +16,11 @@ async function getAllUsers(req, res) {
 }
 
 async function createUser(req, res) {
-<<<<<<< HEAD
-    const { email, phone, password, fullName } = req.body;
-    try {
-      const UserModel = User(sequelize, Sequelize.DataTypes);
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await UserModel.create({ email, password: hashedPassword, phone, fullName });
-=======
     const { email, fullName, password } = req.body;
     try {
       const UserModel = User(sequelize, Sequelize.DataTypes);
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await UserModel.create({ email, password: hashedPassword, fullName });
->>>>>>> develop
       res.status(201).send('Usuario creado exitosamente');
     } catch (error) {
       res.status(500).send(error.message);
