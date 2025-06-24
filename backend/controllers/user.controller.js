@@ -50,29 +50,24 @@ async function loginUser(req, res) {
 };
 
 async function updateUser(req, res) {
-    const { email, password, newPassword, confirmNewPassword} = req.body;
+    const { email, password } = req.body;
 
-    const userModel = User(sequelize, Sequelize.DataTypes);
-    if(password !== userModel.password){
-        res.status(400).send('Las contraseñas no coinciden');
+    if (!email || !password) {
+        return res.status(400).send('Email y nueva contraseña son requeridos');
     }
-    try{
+
+    try {
         const userModel = User(sequelize, Sequelize.DataTypes);
-        const user = await User.findOne({where :{email}});
-        if(!user){
-            res.status(404).send('Usuario no encontrado');
+        const user = await userModel.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).send('Usuario no encontrado');
         }
 
-        if(newPassword && confirmNewPassword){
-            if(newPassword !== confirmNewPassword){
-                return res.status(400).send('Las contraseñas no coinciden');
-            }
-            await userModel.update({password}, {where:{email}});
-            return res.send('Contraseña actualizada exitosamente');
-        }
-        res.send('Usuario actualizado exitosamente');
-    }
-    catch(error){
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await userModel.update({ password: hashedPassword }, { where: { email } });
+
+        return res.send('Contraseña actualizada exitosamente');
+    } catch (error) {
         res.status(500).send(error.message);
     }
 }
