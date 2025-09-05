@@ -12,6 +12,7 @@ async function sendToken (req, res) {
     await sendLoginToken(email, token);
     res.json({ message: 'Token enviado' });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: 'Error enviando el correo' });
   }
 };
