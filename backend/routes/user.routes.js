@@ -7,6 +7,8 @@ userRoutes.post('/create', userController.createUser); //User Route
 
 userRoutes.post('/login', userController.loginUser , authenticateToken); //User Route
 
+userRoutes.post('/login-google', userController.loginWithGoogle , authenticateToken); //User Route
+
 userRoutes.put('/update', userController.updateUser); //User and Admin Route
 
 module.exports = userRoutes;

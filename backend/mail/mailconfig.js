@@ -26,8 +26,8 @@ async function sendLoginToken(to, token) {
   const mailOptions = {
     from: process.env.EMAIL_ADMIN,
     to,
-    subject: 'Tu código de acceso',
-    text: `Tu código de acceso es: ${token}`,
+    subject: 'Your access code',
+    text: `Your access code is: ${token}`,
   };
 
   return transporter.sendMail(mailOptions);
