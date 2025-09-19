@@ -32,10 +32,13 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    await checkAndSyncTable(User, 'Users');
-    await checkAndSyncTable(Anunciante, 'Anunciantes');
-    await checkAndSyncTable(Categoria, 'Categorias');
-    await checkAndSyncTable(Anuncio, 'Anuncios');
+    await sequelize.sync({ force: true });
+    console.log('All tables were successfully dropped and recreated.');
+
+    //await checkAndSyncTable(User, 'Users');
+    //await checkAndSyncTable(Anunciante, 'Anunciantes');
+    //await checkAndSyncTable(Categoria, 'Categorias');
+    //await checkAndSyncTable(Anuncio, 'Anuncios');
     
     console.log('Database synchronized');
 
