@@ -32,10 +32,12 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    await checkAndSyncTable(User, 'Users');
-    await checkAndSyncTable(Anunciante, 'Anunciantes');
-    await checkAndSyncTable(Categoria, 'Categorias');
-    await checkAndSyncTable(Anuncio, 'Anuncios');
+    await sequelize.sync();
+
+    // await checkAndSyncTable(User, 'Users');
+    // await checkAndSyncTable(Anunciante, 'Anunciantes');
+    // await checkAndSyncTable(Categoria, 'Categorias');
+    // await checkAndSyncTable(Anuncio, 'Anuncios');
     
     console.log('Database synchronized');
 
