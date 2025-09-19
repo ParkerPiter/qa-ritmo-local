@@ -10,10 +10,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isNumeric: false
-      }
+      allowNull: true
     },
     password: {
       type: DataTypes.STRING,
