@@ -23,7 +23,7 @@ async function createUser(req, res) {
             return res.status(400).send('El email ya está en uso');
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await UserModel.create({ email, password: hashedPassword, fullName });
+        const user = await User.create({ email, password: hashedPassword, fullName });
         const userResponse = {
         id: user.id,
         email: user.email,
