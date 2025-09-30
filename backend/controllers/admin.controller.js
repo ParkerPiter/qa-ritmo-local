@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {sequelize, Sequelize} = require('../schemas/index');
-//const Admin = require('../schemas/Admin');
+const {sequelize, Sequelize} = require('../schemas/index');;
 const Admin = require('../schemas/Admin');
 
 async function createUserAdmin(req, res) {

@@ -9,17 +9,23 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 });
 
 const User = require('./User')(sequelize, Sequelize.DataTypes);
-const Anunciante = require('./Anunciante')(sequelize, Sequelize.DataTypes);
-const Anuncio = require('./Anuncio')(sequelize, Sequelize.DataTypes);
+const Organizador = require('./Organizador')(sequelize, Sequelize.DataTypes);
+const Evento = require('./Evento')(sequelize, Sequelize.DataTypes);
 const Categoria = require('./Categoria')(sequelize, Sequelize.DataTypes);
 
 const db = {
   sequelize,
   Sequelize,
   User,
-  Anunciante,
-  Anuncio,
+  Organizador,
+  Evento,
   Categoria
 };
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
 module.exports = db;

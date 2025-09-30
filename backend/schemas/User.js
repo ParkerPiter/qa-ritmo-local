@@ -10,7 +10,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     phone: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
+      validate: {
+        isNumeric: false
+      }
     },
     password: {
       type: DataTypes.STRING,
@@ -29,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   User.associate = (models) => {
-    User.hasMany(models.Anuncio, { foreignKey: 'userId' });
+    // User.hasMany(models.Anuncio, { foreignKey: 'userId' });
   };
 
   return User;

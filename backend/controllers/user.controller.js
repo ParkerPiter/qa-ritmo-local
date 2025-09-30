@@ -18,22 +18,11 @@ async function getAllUsers(req, res) {
 async function createUser(req, res) {
     const { email, fullName, password } = req.body;
     try {
-        const userModel = User(sequelize, Sequelize.DataTypes);
-        const existingUser = await userModel.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(400).send('El email ya está en uso');
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await userModel.create({ email, password: hashedPassword, fullName });
-        const userResponse = {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName
-      };
-        res.status(201).json({
-          message: 'Usuario creado exitosamente',
-          user: userResponse
-        });
+      const UserModel = User(sequelize, Sequelize.DataTypes);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await UserModel.create({ email, password: hashedPassword, fullName });
+
+      res.status(201).send('Usuario creado exitosamente');
     } catch (error) {
       res.status(500).send(error.message);
     }
@@ -105,13 +94,13 @@ async function loginWithGoogle(req, res) {
   }
 }
 
-
 async function updateUser(req, res) {
     const { email, password } = req.body;
 
     if (!email || !password) {
         return res.status(400).send('Email y nueva contraseña son requeridos');
     }
+
     try {
         const userModel = User(sequelize, Sequelize.DataTypes);
         const user = await userModel.findOne({ where: { email } });
@@ -161,5 +150,5 @@ async function findUserByEmail(req, res) {
     }
 }
 
-module.exports = { getAllUsers, createUser, updateUser, deleteUser, loginUser, loginWithGoogle, findUserByEmail };
 
+module.exports = { getAllUsers, createUser, updateUser, deleteUser, loginUser, loginWithGoogle, findUserByEmail };
