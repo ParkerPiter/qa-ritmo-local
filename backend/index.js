@@ -3,7 +3,6 @@ const cors = require('cors');
 const path = require('path');
 const connectDB = require('./db');
 const { sequelize, User, Organizador, Evento, Categoria } = require('./schemas'); // Importa los modelos
-const ProgressBar = require('progress');
 
 const principalRoutes = require('./routes/principal.routes');
 
@@ -15,47 +14,30 @@ app.use(express.json());
 // Servir archivos estáticos
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-const checkAndSyncTable = async (model, modelName) => {
-  const tableExists = await sequelize.getQueryInterface().showAllTables().then(tables => tables.includes(modelName));
-  if (tableExists) {
-    const count = await model.count();
-    if (count === 0) {
-      await model.sync({ force: false});
-      console.log(`Table ${modelName} recreated because it was empty.`);
-    } else {
-      await model.sync();
-      console.log(`Table ${modelName} already exists and has data.`);
-    }
-  } else {
-    await model.sync({ force: false});
-    console.log(`Table ${modelName} created.`);
-  }
-};
+// const checkAndSyncTable = async (model, modelName) => {
+//   const tableExists = await sequelize.getQueryInterface().showAllTables().then(tables => tables.includes(modelName));
+//   if (tableExists) {
+//     const count = await model.count();
+//     if (count === 0) {
+//       await model.sync({ force: false});
+//       console.log(`Table ${modelName} recreated because it was empty.`);
+//     } else {
+//       await model.sync();
+//       console.log(`Table ${modelName} already exists and has data.`);
+//     }
+//   } else {
+//     await model.sync({ force: false});
+//     console.log(`Table ${modelName} created.`);
+//   }
+// };
 
 const startServer = async () => {
   try {
     console.log('Connecting to the database and synchronizing models...');
-    const progressBar = new ProgressBar('[:bar] :percent :etas', {
-      total: 5,
-      width: 40,
-      complete: '=',
-      incomplete: ' ',
-    });
 
     await connectDB();
-    progressBar.tick();
 
-    await checkAndSyncTable(User, 'Users');
-    progressBar.tick();
-
-    await checkAndSyncTable(Organizador, 'Organizadors');
-    progressBar.tick();
-
-    await checkAndSyncTable(Categoria, 'Categorias');
-    progressBar.tick();
-
-    await checkAndSyncTable(Evento, 'Eventos');
-    progressBar.tick();
+    await sequelize.sync({ force: false });
     
     console.log('\nDatabase synchronized successfully.');
 
