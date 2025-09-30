@@ -15,7 +15,7 @@ const eventos = [
     title: "Pop Gala 2025",
     date: "2025-08-10 20:00:00",
     location: "Staples Center, LA",
-    image: "/public/images/card-2.jpg",
+    image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
     type: 'Paid',
     genre: 'Pop',
     eventLocation: 'Los Angeles'
@@ -24,7 +24,7 @@ const eventos = [
     title: "Indie Rock Fest",
     date: "2025-09-05 18:00:00",
     location: "The Fillmore, SF",
-    image: "/public/images/card-3.jpg",
+    image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
     type: 'Paid',
     genre: 'Indie / Alternative',
     eventLocation: 'San Francisco'
@@ -33,7 +33,7 @@ const eventos = [
     title: "EDM in the Park",
     date: "2025-10-12 22:00:00",
     location: "Golden Gate Park, SF",
-    image: "/public/images/musicImg.png",
+    image: "https://i.postimg.cc/MctQf66P/musicImg.png",
     type: 'Free',
     genre: 'EDM (Electronic Dance Music)',
     eventLocation: 'San Francisco'
@@ -42,7 +42,7 @@ const eventos = [
     title: "Band vs Band 2025",
     date: "2025-08-11 16:00:00",
     location: "Staples Center, LA",
-    image: "/public/images/card-2.jpg",
+    image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
     type: 'Free',
     genre: 'Rock',
     eventLocation: 'Los Angeles'
@@ -51,7 +51,7 @@ const eventos = [
     title: "Punk Rock Fest",
     date: "2025-09-05 18:00:00",
     location: "The Fillmore, SF",
-    image: "/public/images/card-3.jpg",
+    image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
     type: 'Paid',
     genre: 'Punk',
     eventLocation: 'San Francisco'
@@ -60,7 +60,7 @@ const eventos = [
     title: "BTS Live Concert",
     date: "2025-10-08 22:00:00",
     location: "Golden Gate Park, SF",
-    image: "/public/images/musicImg.png",
+    image: "https://i.postimg.cc/MctQf66P/musicImg.png",
     type: 'Paid',
     genre: 'K-Pop',
     eventLocation: 'San Francisco'
