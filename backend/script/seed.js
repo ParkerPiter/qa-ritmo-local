@@ -69,7 +69,7 @@ const eventos = [
 
 async function seed() {
   try {
-    await sequelize.sync({ force: false });
+    await sequelize.sync({ force: true });
     console.log('Database synced!');
 
     // Crear Organizadores
