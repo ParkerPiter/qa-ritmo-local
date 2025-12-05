@@ -13,7 +13,7 @@ const ubicaciones = ['Los Angeles', 'San Francisco'];
 const eventos = [
   {
     title: "Pop Gala 2025",
-    date: "2025-08-10 20:00:00",
+    date: "2025-12-15 20:00:00",
     location: "Staples Center, LA",
     image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
     type: 'Paid',
@@ -22,7 +22,7 @@ const eventos = [
   },
   {
     title: "Indie Rock Fest",
-    date: "2025-09-05 18:00:00",
+    date: "2025-12-12 18:00:00",
     location: "The Fillmore, SF",
     image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
     type: 'Paid',
@@ -31,7 +31,7 @@ const eventos = [
   },
   {
     title: "EDM in the Park",
-    date: "2025-10-12 22:00:00",
+    date: "2025-12-21 22:00:00",
     location: "Golden Gate Park, SF",
     image: "https://i.postimg.cc/MctQf66P/musicImg.png",
     type: 'Free',
@@ -40,7 +40,7 @@ const eventos = [
   },
   {
     title: "Band vs Band 2025",
-    date: "2025-08-11 16:00:00",
+    date: "2025-12-18 16:00:00",
     location: "Staples Center, LA",
     image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
     type: 'Free',
@@ -49,7 +49,7 @@ const eventos = [
   },
   {
     title: "Punk Rock Fest",
-    date: "2025-09-05 18:00:00",
+    date: "2025-12-28 18:00:00",
     location: "The Fillmore, SF",
     image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
     type: 'Paid',
@@ -58,7 +58,7 @@ const eventos = [
   },
   {
     title: "BTS Live Concert",
-    date: "2025-10-08 22:00:00",
+    date: "2025-12-29 22:00:00",
     location: "Golden Gate Park, SF",
     image: "https://i.postimg.cc/MctQf66P/musicImg.png",
     type: 'Paid',
@@ -107,12 +107,33 @@ async function seed() {
 
     // Crear Eventos
     for (const eventoData of eventos) {
+        const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
+
+        // Useful information: [horas string, accesibilidad, puntos de agua, food trucks, wifi, baños gratis]
+        const usefulInfo = [
+          '6 hours per day',
+          true,  // accesibilidad
+          true,  // puntos de agua
+          false, // food trucks
+          true,  // wifi
+          true   // baños gratis
+        ];
+
+        // Simple mapeo de ubicación a una URL de Google Maps
+        const mapsByLocation = {
+          'Staples Center, LA': 'https://maps.google.com/?q=Staples+Center+Los+Angeles',
+          'The Fillmore, SF': 'https://maps.google.com/?q=The+Fillmore+San+Francisco',
+          'Golden Gate Park, SF': 'https://maps.google.com/?q=Golden+Gate+Park+San+Francisco'
+        };
+
         const newEvento = await Evento.create({
             titulo: eventoData.title,
             ubicacion: eventoData.location,
+            maps: mapsByLocation[eventoData.location] || `https://maps.google.com/?q=${encodeURIComponent(eventoData.location)}`,
             fecha: new Date(eventoData.date),
             galeriaImagenes: [eventoData.image],
-            descripcion: `An amazing ${eventoData.title}.`,
+            descripcion: lorem,
+            useful_information: usefulInfo,
             organizadorId: Math.random() > 0.5 ? organizador1.id : organizador2.id,
             precio: eventoData.type === 'Free' ? 0 : Math.floor(Math.random() * 100) + 20,
         });
