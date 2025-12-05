@@ -21,27 +21,20 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     useful_information: {
-      type: [
-        { type: String },
-        { type: Boolean },
-        { type: Boolean },
-        { type: Boolean },
-        { type: Boolean },
-        { type: Boolean }
-      ],
-      default: ["", false, false, false, false, false],
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: ["", false, false, false, false, false],
       validate: {
-        validator: function (arr) {
-          if (!Array.isArray(arr)) return false;
-          // Debe tener exactamente 6 elementos: 1 string + 5 booleans
-          if (arr.length !== 6) return false;
-          if (typeof arr[0] !== 'string') return false;
-          for (let i = 1; i < 6; i++) {
-            if (typeof arr[i] !== 'boolean') return false;
+        isValidArray(value) {
+          if (!Array.isArray(value) || value.length !== 6) {
+            throw new Error('useful_information debe ser un arreglo de 6 elementos');
           }
-          return true;
-        },
-        message: 'useful_information debe ser [string, boolean, boolean, boolean, boolean, boolean]'
+          const [hours, a11y, water, foodTrucks, wifi, toilets] = value;
+          if (typeof hours !== 'string') throw new Error('El índice 0 (horas) debe ser string');
+          for (const b of [a11y, water, foodTrucks, wifi, toilets]) {
+            if (typeof b !== 'boolean') throw new Error('Índices 1-5 deben ser boolean');
+          }
+        }
       }
     },
     descripcion: {
