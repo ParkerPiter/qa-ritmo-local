@@ -15,7 +15,7 @@ const eventos = [
     title: "Pop Gala 2025",
     date: "2025-12-15 20:00:00",
     location: "Staples Center, LA",
-    image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
+    image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Pop',
     eventLocation: 'Los Angeles'
@@ -24,7 +24,7 @@ const eventos = [
     title: "Indie Rock Fest",
     date: "2025-12-12 18:00:00",
     location: "The Fillmore, SF",
-    image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
+    image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Indie / Alternative',
     eventLocation: 'San Francisco'
@@ -33,7 +33,7 @@ const eventos = [
     title: "EDM in the Park",
     date: "2025-12-21 22:00:00",
     location: "Golden Gate Park, SF",
-    image: "https://i.postimg.cc/MctQf66P/musicImg.png",
+    image: "/public/images/musicImg.png",
     type: 'Free',
     genre: 'EDM (Electronic Dance Music)',
     eventLocation: 'San Francisco'
@@ -42,7 +42,7 @@ const eventos = [
     title: "Band vs Band 2025",
     date: "2025-12-18 16:00:00",
     location: "Staples Center, LA",
-    image: "https://i.postimg.cc/jWv7nxxh/card-2.jpg",
+    image: "/public/images/card-2.jpg",
     type: 'Free',
     genre: 'Rock',
     eventLocation: 'Los Angeles'
@@ -51,7 +51,7 @@ const eventos = [
     title: "Punk Rock Fest",
     date: "2025-12-28 18:00:00",
     location: "The Fillmore, SF",
-    image: "https://i.postimg.cc/7CX2JHPy/card-3.jpg",
+    image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Punk',
     eventLocation: 'San Francisco'
@@ -60,16 +60,52 @@ const eventos = [
     title: "BTS Live Concert",
     date: "2025-12-29 22:00:00",
     location: "Golden Gate Park, SF",
-    image: "https://i.postimg.cc/MctQf66P/musicImg.png",
+    image: "/public/images/musicImg.png",
     type: 'Paid',
     genre: 'K-Pop',
+    eventLocation: 'San Francisco'
+  },
+   {
+    title: "Band vs Band ",
+    date: "2025-10-14 16:00:00",
+    location: "Staples Center, LA",
+    image: "/public/images/card-2.jpg",
+    type: 'Paid',
+    genre: 'Rock',
+    eventLocation: 'Los Angeles'
+  },
+   {
+    title: "Pop clasic",
+    date: "2025-10-16 16:00:00",
+    location: "Staples Center, LA",
+    image: "/public/images/musicImg.png",
+    type: 'Paid',
+    genre: 'Pop',
+    eventLocation: 'Los Angeles'
+  },
+  {
+    title: "90's Rock Punk",
+    date: "2025-10-15 16:00:00",
+    location: "Staples Center, LA",
+    image: "/public/images/card-2.jpg",
+    type: 'Paid',
+    genre: 'Rock',
+    eventLocation: 'San Francisco'
+  },
+    {
+    title: "Pop of 20's",
+    date: "2025-10-16 16:00:00",
+    location: "Staples Center, LA",
+    image: "/public/images/card-3.jpg",
+    type: 'Paid',
+    genre: 'Pop',
     eventLocation: 'San Francisco'
   }
 ];
 
 async function seed() {
   try {
-    await sequelize.sync({ force: false });
+    await sequelize.sync({ force: true });
     console.log('Database synced!');
 
     // Crear Organizadores
