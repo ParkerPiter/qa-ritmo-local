@@ -8,6 +8,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true 
     },
+    maps: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     fecha: {
       type: DataTypes.DATE,
       allowNull: false
@@ -15,6 +19,30 @@ module.exports = (sequelize, DataTypes) => {
     galeriaImagenes: {
       type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: false
+    },
+    useful_information: {
+      type: [
+        { type: String },
+        { type: Boolean },
+        { type: Boolean },
+        { type: Boolean },
+        { type: Boolean },
+        { type: Boolean }
+      ],
+      default: ["", false, false, false, false, false],
+      validate: {
+        validator: function (arr) {
+          if (!Array.isArray(arr)) return false;
+          // Debe tener exactamente 6 elementos: 1 string + 5 booleans
+          if (arr.length !== 6) return false;
+          if (typeof arr[0] !== 'string') return false;
+          for (let i = 1; i < 6; i++) {
+            if (typeof arr[i] !== 'boolean') return false;
+          }
+          return true;
+        },
+        message: 'useful_information debe ser [string, boolean, boolean, boolean, boolean, boolean]'
+      }
     },
     descripcion: {
       type: DataTypes.STRING,

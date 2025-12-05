@@ -16,7 +16,7 @@ function generate4DigitToken() {
 async function sendLoginToken(to, token) {
   // Configura tu transporter (ajusta los datos reales)
   const transporter = nodemailer.createTransport({
-    service: 'gmail', // o el que uses
+    service: 'gmail',
     auth: {
       user: process.env.EMAIL_ADMIN,
       pass: process.env.EMAIL_PASS,
