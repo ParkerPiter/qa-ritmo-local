@@ -22,9 +22,20 @@ async function createUser(req, res) {
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await UserModel.create({ email, password: hashedPassword, fullName });
 
-      res.status(201).send('Usuario creado exitosamente');
+      res.status(201).json({
+        success: true,
+        message: 'Usuario creado exitosamente',
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName
+        }
+      });
     } catch (error) {
-      res.status(500).send(error.message);
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
     }
   }
 
@@ -34,16 +45,23 @@ async function loginUser(req, res) {
         const userModel = User(sequelize, Sequelize.DataTypes);
         const user = await userModel.findOne({ where: {email}});
         if(!user){
-            res.status(404).send('Usuario no encontrado');
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(400).send('Contraseña incorrecta');
+            return res.status(400).json({
+                success: false,
+                message: 'Contraseña incorrecta'
+            });
         }
 
         const token = jwt.sign( { id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' } 
         );
         res.status(200).json({
+            success: true,
             message: 'Usuario logueado exitosamente',
             token,
                 user: {
@@ -55,7 +73,10 @@ async function loginUser(req, res) {
         });
     }
     catch(error){
-        res.status(500).send(error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -81,6 +102,7 @@ async function loginWithGoogle(req, res) {
     );
 
     res.status(200).json({
+      success: true,
       message: 'Usuario logueado con Google exitosamente',
       token,
       user: {
@@ -90,7 +112,10 @@ async function loginWithGoogle(req, res) {
       }
     });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 }
 
@@ -98,22 +123,34 @@ async function updateUser(req, res) {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).send('Email y nueva contraseña son requeridos');
+        return res.status(400).json({
+            success: false,
+            message: 'Email y nueva contraseña son requeridos'
+        });
     }
 
     try {
         const userModel = User(sequelize, Sequelize.DataTypes);
         const user = await userModel.findOne({ where: { email } });
         if (!user) {
-            return res.status(404).send('Usuario no encontrado');
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         await userModel.update({ password: hashedPassword }, { where: { email } });
 
-        return res.send('Contraseña actualizada exitosamente');
+        return res.status(200).json({
+            success: true,
+            message: 'Contraseña actualizada exitosamente'
+        });
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 }
 
@@ -121,15 +158,24 @@ async function deleteUser(req, res) {
     const { email } = req.body;
     try{
         const userModel = User(sequelize, Sequelize.DataTypes);
-        const user = await User.findOne({where:{email}});
+        const user = await userModel.findOne({where:{email}});
         if(!user){
-            res.status(404).send('Usuario no encontrado');
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
         }
         await userModel.destroy({where:{email}});
-        res.send('Usuario eliminado exitosamente');
+        res.status(200).json({
+            success: true,
+            message: 'Usuario eliminado exitosamente'
+        });
     }
     catch(error){
-        res.status(500).send(error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -141,12 +187,21 @@ async function findUserByEmail(req, res) {
         const user = await userModel.findOne({ where: { email } });
 
         if (!user) {
-            return res.status(404).send('Usuario no encontrado');
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
         }
 
-        res.status(200).json(user);
+        res.status(200).json({
+            success: true,
+            user: user
+        });
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 }
 
