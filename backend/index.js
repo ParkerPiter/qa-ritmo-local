@@ -37,8 +37,8 @@ const startServer = async () => {
 
     await connectDB();
 
-    await sequelize.sync({ force: true });
-    
+    await sequelize.sync({ force: false });
+  
     console.log('\nDatabase synchronized successfully.');
 
     app.use('/api', principalRoutes);
