@@ -28,6 +28,29 @@ const createCheckout = async (req, res) => {
                 ? 'https://ritmo-local-test.netlify.app'
                 : 'http://localhost:3000');
 
+        // Validar y construir URL de imagen
+        let validImageUrl = null;
+        if (eventImageUrl) {
+            console.log('URL de imagen recibida:', eventImageUrl);
+            try {
+                // Si es una ruta relativa, convertirla a URL absoluta
+                if (eventImageUrl.startsWith('/')) {
+                    validImageUrl = `${baseUrl}${eventImageUrl}`;
+                    console.log('URL de imagen convertida a absoluta:', validImageUrl);
+                } else {
+                    // Validar que sea una URL válida
+                    new URL(eventImageUrl);
+                    validImageUrl = eventImageUrl;
+                    console.log('URL de imagen válida:', validImageUrl);
+                }
+            } catch (error) {
+                console.log('URL de imagen inválida, omitiendo imagen:', eventImageUrl, error.message);
+                validImageUrl = null;
+            }
+        } else {
+            console.log('No se proporcionó URL de imagen');
+        }
+
         // Crear sesión de checkout
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -37,7 +60,7 @@ const createCheckout = async (req, res) => {
                     product_data: {
                         name: eventTitle,
                         description: `Entrada para el evento: ${eventTitle}`,
-                        images: eventImageUrl ? [eventImageUrl] : [],
+                        images: validImageUrl ? [validImageUrl] : [],
                     },
                     unit_amount: Math.round(amount * 100), // Stripe usa centavos
                 },
