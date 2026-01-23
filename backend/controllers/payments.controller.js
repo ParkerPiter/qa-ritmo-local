@@ -23,10 +23,10 @@ const createCheckout = async (req, res) => {
         }
 
         // Determinar la URL base desde variables de entorno o valor por defecto
-        const baseUrl = process.env.FRONTEND_URL || 
+        const baseUrl = (process.env.FRONTEND_URL || 
             (process.env.NODE_ENV === 'production' 
                 ? 'https://ritmo-local-test.netlify.app'
-                : 'http://localhost:3000');
+                : 'http://localhost:3000')).replace(/\/$/, ''); // Remover barra final si existe
 
         // Validar y construir URL de imagen
         let validImageUrl = null;
@@ -67,8 +67,8 @@ const createCheckout = async (req, res) => {
                 quantity: quantity,
             }],
             mode: 'payment',
-            success_url: `${baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${baseUrl}/payment/cancel?eventId=${eventId}&userId=${userId}`,
+            success_url: `${baseUrl}?showSuccessModal=true&session_id={CHECKOUT_SESSION_ID}&eventId=${eventId}`,
+            cancel_url: `${baseUrl}?showCancelModal=true&userId=${userId}&eventId=${eventId}`,
             metadata: {
                 eventId: eventId.toString(),
                 userId: userId.toString(),
