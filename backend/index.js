@@ -37,7 +37,7 @@ const startServer = async () => {
 
     await connectDB();
 
-    await sequelize.sync({ force: false });
+    await sequelize.sync({ force: true });
     
     console.log('\nDatabase synchronized successfully.');
 
