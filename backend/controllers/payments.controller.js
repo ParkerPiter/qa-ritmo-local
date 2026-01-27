@@ -62,7 +62,7 @@ const createCheckout = async (req, res) => {
                         description: `Entrada para el evento: ${eventTitle}`,
                         images: validImageUrl ? [validImageUrl] : [],
                     },
-                    unit_amount: Math.round(amount * 100), // Stripe usa centavos
+                    unit_amount: Math.round((amount / quantity) * 100), // Stripe usa centavos
                 },
                 quantity: quantity,
             }],
