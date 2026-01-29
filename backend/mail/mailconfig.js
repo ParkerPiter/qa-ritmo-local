@@ -2,6 +2,31 @@ const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
+// Crear el transporter una sola vez
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true para 465, false para otros puertos
+  auth: {
+    user: process.env.EMAIL_ADMIN,
+    pass: process.env.EMAIL_PASS,
+  },
+  // Añadir opciones de timeout y retry
+  connectionTimeout: 10000, // 10 segundos
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+
+// Verificar la conexión al iniciar
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('Error with email transporter:', error);
+  } else {
+    console.log('Email server is ready to send messages');
+  }
+});
+
 /* Genera un token numérico de 4 dígitos como string. */
 function generate4DigitToken() {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -14,15 +39,6 @@ function generate4DigitToken() {
  * @returns {Promise}
  */
 async function sendLoginToken(to, token) {
-  // Configura tu transporter (ajusta los datos reales)
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_ADMIN,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
   const mailOptions = {
     from: process.env.EMAIL_ADMIN,
     to,
@@ -46,14 +62,6 @@ async function sendLoginToken(to, token) {
  */
 async function sendContactEmail(params) {
   const { toAdmin, toUser, name, email, subject, message } = params;
-  
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_ADMIN,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
 
   let mailOptions;
 
