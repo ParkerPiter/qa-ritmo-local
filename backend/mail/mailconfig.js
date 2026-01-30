@@ -2,28 +2,38 @@ const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
+// Console log para verificar que las variables de entorno están cargadas
+console.log('=== Email Configuration ===');
+console.log('EMAIL_ADMIN:', process.env.EMAIL_ADMIN);
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '***configurado***' : 'NO CONFIGURADO');
+console.log('===========================');
+
 // Crear el transporter una sola vez
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true para 465, false para otros puertos
+  port: 465,
+  secure: true, // true para 465, false para otros puertos
   auth: {
     user: process.env.EMAIL_ADMIN,
     pass: process.env.EMAIL_PASS,
   },
   // Añadir opciones de timeout y retry
-  connectionTimeout: 10000, // 10 segundos
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+  connectionTimeout: 30000, // 30 segundos
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
+  logger: false, // Cambiar a true para ver logs detallados
+  debug: false, // Cambiar a true para debugging
 });
 
 // Verificar la conexión al iniciar
 transporter.verify(function (error, success) {
   if (error) {
-    console.error('Error with email transporter:', error);
+    console.error('❌ Error with email transporter:', error);
+    console.error('Error code:', error.code);
+    console.error('Error command:', error.command);
   } else {
-    console.log('Email server is ready to send messages');
+    console.log('✅ Email server is ready to send messages');
   }
 });
 
