@@ -6,19 +6,22 @@ dotenv.config();
 const transporter = nodemailer.createTransport({
   // service: 'gmail',
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // true para 465, false para otros puertos
+  port: 587,      // <--- CAMBIO 1: Puerto estándar para envíos cloud
+  secure: false,  // <--- CAMBIO 2: false para puerto 587 (usa STARTTLS)
   auth: {
     user: process.env.EMAIL_ADMIN,
     pass: process.env.EMAIL_PASS,
   },
   family: 4, // Forzar IPv4
   // Añadir opciones de timeout y retry
+  tls: {
+    rejectUnauthorized: true, 
+  },
   connectionTimeout: 30000, // 30 segundos
   greetingTimeout: 30000,
   socketTimeout: 30000,
   logger: true, // Cambiar a true para ver logs detallados
-  debug: false, // Cambiar a true para debugging
+  debug: true, // Cambiar a true para debugging
 });
 
 /* Genera un token numérico de 4 dígitos como string. */
