@@ -1,7 +1,7 @@
 const express = require('express');
 const userRoutes = express.Router();
 const userController = require('../controllers/user.controller');
-const authenticateToken = require('../middleware/auth.Middleware');
+const { authenticateToken } = require('../middleware/auth.Middleware');
 
 // ============ RUTAS PÚBLICAS ============
 userRoutes.post('/create', userController.createUser);

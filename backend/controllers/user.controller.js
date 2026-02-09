@@ -125,4 +125,101 @@ async function findUserByEmail(req, res) {
     }
 }
 
-module.exports = { getAllUsers, createUser, updateUser, deleteUser, loginUser, loginWithGoogle, findUserByEmail };
+async function getProfile(req, res) {
+    try {
+        const userId = req.user.id;
+        const profile = await userService.getUserProfile(userId);
+        handleSuccess(res, { 
+            message: 'Get user profile successfully',
+            profile 
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function updateProfile(req, res) {
+    try {
+        const userId = req.user.id;
+        const updateData = req.body;
+        
+        const user = await userService.updateProfile(userId, updateData);
+        handleSuccess(res, {
+            message: 'Profile updated successfully',
+            user
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function addFavorite(req, res) {
+    try {
+        const userId = req.user.id;
+        const { eventoId } = req.body;
+        
+        if (!eventoId) {
+            const error = new Error('Event ID is required');
+            error.statusCode = 400;
+            throw error;
+        }
+        
+        const favorite = await userService.addFavorite(userId, eventoId);
+        handleSuccess(res, {
+            message: 'Event added to favorites',
+            favorite
+        }, 201);
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function removeFavorite(req, res) {
+    try {
+        const userId = req.user.id;
+        const { eventoId } = req.params;
+        
+        if (!eventoId) {
+            const error = new Error('Event ID is required');
+            error.statusCode = 400;
+            throw error;
+        }
+        
+        await userService.removeFavorite(userId, parseInt(eventoId));
+        handleSuccess(res, {
+            message: 'Event removed from favorites'
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function getOrders(req, res) {
+    try {
+        const userId = req.user.id;
+        const { estado } = req.query; // Optional filter: 'pending', 'paid', 'cancel'
+        
+        const orders = await userService.getUserOrders(userId, estado);
+        handleSuccess(res, {
+            message: 'Orders retrieved successfully',
+            orders
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+module.exports = { 
+    getAllUsers, 
+    createUser, 
+    updateUser, 
+    deleteUser, 
+    loginUser, 
+    loginWithGoogle, 
+    findUserByEmail,
+    getProfile,
+    updateProfile,
+    addFavorite,
+    removeFavorite,
+    getOrders
+};
