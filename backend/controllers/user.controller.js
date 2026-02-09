@@ -153,6 +153,19 @@ async function updateProfile(req, res) {
     }
 }
 
+async function getFavorites(req, res) {
+    try {
+        const userId = req.user.id;
+        const favorites = await userService.getFavorites(userId);
+        handleSuccess(res, {
+            message: 'Favoritos obtenidos exitosamente',
+            favorites
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
 async function addFavorite(req, res) {
     try {
         const userId = req.user.id;
@@ -219,6 +232,7 @@ module.exports = {
     findUserByEmail,
     getProfile,
     updateProfile,
+    getFavorites,
     addFavorite,
     removeFavorite,
     getOrders

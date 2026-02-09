@@ -3,6 +3,11 @@ const userRoutes = express.Router();
 const userController = require('../controllers/user.controller');
 const { authenticateToken } = require('../middleware/auth.Middleware');
 
+// Debugging temporal para verificar exportaciones
+console.log('🔍 UserController métodos exportados:', Object.keys(userController));
+console.log('🔍 getProfile:', typeof userController.getProfile);
+console.log('🔍 getFavorites:', typeof userController.getFavorites);
+
 // ============ RUTAS PÚBLICAS ============
 userRoutes.post('/create', userController.createUser);
 userRoutes.post('/login', userController.loginUser);
