@@ -1,29 +1,13 @@
-const { Evento, Categoria, Organizador } = require('../schemas');
+const eventoService = require('../services/evento.service');
+const { handleError, handleSuccess } = require('../utils/responseHandler');
 
 // Get all eventos
 const getAllEventos = async (req, res) => {
   try {
-    const eventos = await Evento.findAll({
-      include: [
-        {
-          model: Categoria,
-          as: 'Categorias',
-          attributes: ['id', 'nombre', 'tipo'],
-          through: {
-            attributes: []
-          }
-        },
-        {
-          model: Organizador,
-          as: 'Organizador',
-          attributes: ['id', 'nombreCompleto', 'email']
-        }
-      ]
-    });
-    res.json(eventos);
+    const eventos = await eventoService.getAllEventos();
+    handleSuccess(res, { eventos });
   } catch (error) {
-    console.error('Error fetching eventos:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    handleError(res, error);
   }
 };
 
@@ -31,55 +15,17 @@ const getAllEventos = async (req, res) => {
 const getEventoById = async (req, res) => {
   try {
     const { id } = req.params;
-    const evento = await Evento.findByPk(id, {
-      include: [
-        {
-          model: Categoria,
-          as: 'Categorias',
-          attributes: ['id', 'nombre', 'tipo'],
-          through: { attributes: [] }
-        },
-        {
-          model: Organizador,
-          as: 'Organizador',
-          attributes: ['id', 'nombreCompleto', 'email']
-        }
-      ]
-    });
-
-    if (!evento) {
-      return res.status(404).json({ error: 'Evento no encontrado' });
+    
+    if (!id) {
+      const error = new Error('ID del evento es requerido');
+      error.statusCode = 400;
+      throw error;
     }
 
-    // Asegurar que devolvemos los campos nuevos: descripcion, useful_information, maps, ubicacion, galeriaImagenes
-    const {
-      id: eventoId,
-      titulo,
-      descripcion,
-      useful_information,
-      maps,
-      ubicacion,
-      galeriaImagenes,
-      fecha,
-      precio
-    } = evento;
-
-    res.json({
-      id: eventoId,
-      titulo,
-      descripcion,
-      useful_information,
-      maps,
-      ubicacion,
-      galeriaImagenes,
-      fecha,
-      precio,
-      Organizador: evento.Organizador,
-      Categorias: evento.Categorias
-    });
+    const evento = await eventoService.getEventoById(id);
+    handleSuccess(res, { evento });
   } catch (error) {
-    console.error('Error fetching evento by id:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    handleError(res, error);
   }
 };
 

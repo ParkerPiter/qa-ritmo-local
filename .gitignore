@@ -1,0 +1,7 @@
+#Envarioment
+.env
+# Logs
+logs
+# Dependency directories
+node_modules
+

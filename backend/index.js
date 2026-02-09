@@ -9,6 +9,12 @@ const principalRoutes = require('./routes/principal.routes');
 const port = 3001;
 const app = express();
 app.use(cors());
+
+// IMPORTANTE: Middleware para el webhook de Stripe (debe recibir raw body)
+// Esto DEBE ir ANTES de express.json() para que Stripe pueda verificar la firma
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+// Middleware para parsear JSON en el resto de las rutas
 app.use(express.json());
 
 // Servir archivos estáticos
