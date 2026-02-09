@@ -1,12 +1,13 @@
 const express = require('express');
 const userRoutes = express.Router();
 const userController = require('../controllers/user.controller');
-const { authenticateToken } = require('../middleware/auth.Middleware');
+const authenticateToken = require('../middleware/auth.Middleware'); // ✅ Sin destructuring
 
 // Debugging temporal para verificar exportaciones
 console.log('🔍 UserController métodos exportados:', Object.keys(userController));
 console.log('🔍 getProfile:', typeof userController.getProfile);
 console.log('🔍 getFavorites:', typeof userController.getFavorites);
+console.log('🔍 authenticateToken:', typeof authenticateToken); // ✅ Verificar middleware
 
 // ============ RUTAS PÚBLICAS ============
 userRoutes.post('/create', userController.createUser);
