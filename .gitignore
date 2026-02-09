@@ -1,7 +1,10 @@
 #Envarioment
 .env
+.env.local
+.env.*.local
 # Logs
 logs
 # Dependency directories
-node_modules
+node_modules/
 
+.env
