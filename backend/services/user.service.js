@@ -64,6 +64,7 @@ class UserService {
    * @returns {Promise<Object>} Usuario y token
    */
   async authenticateWithGoogle({ email, fullName, profileImage }) {
+    console.log('🔍 Datos recibidos:', { email, fullName, profileImage });
     let user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -193,7 +194,7 @@ class UserService {
     const user = await User.findByPk(userId);
     
     if (!user) {
-      const error = new Error('Usuario no encontrado');
+      const error = new Error('User not found');
       error.statusCode = 404;
       throw error;
     }
