@@ -75,13 +75,15 @@ class UserService {
         fullName,
         profileImage: profileImage || null
       });
+      console.log('✅ User created with profileImage:', user.profileImage);
     } else {
       // Actualizar usuario existente con nuevos datos de Google
-      const updateData = { fullName };
-      if (profileImage) {
-        updateData.profileImage = profileImage;
-      }
+       const updateData = { 
+        fullName,
+        profileImage: profileImage || null  // ← Cambio: Siempre actualizar, incluso si es null
+      };
       await user.update(updateData);
+      console.log('✅ Usuario actualizado. ProfileImage:', profileImage);
       user = await User.findOne({ where: { email } });
     }
 
