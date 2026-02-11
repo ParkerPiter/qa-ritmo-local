@@ -46,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
     // Relación con favoritos
     User.hasMany(models.UserFav, {
       foreignKey: 'userId',
-      as: 'favs'
+      as: 'favoritos'
     });
 
     // Relación con pedidos
