@@ -64,39 +64,46 @@ class UserService {
    * @returns {Promise<Object>} Usuario y token
    */
   async authenticateWithGoogle({ email, fullName, profileImage }) {
-    console.log('🔍 Datos recibidos:', { email, fullName, profileImage });
+    console.log('🔍 Datos recibidos en backend:', { email, fullName, profileImage }); // DEBUG
+    
     let user = await User.findOne({ where: { email } });
 
     if (!user) {
-      // Crear nuevo usuario con la imagen de Google
+      // ✅ Crear nuevo usuario con la imagen de Google
+      console.log('➕ Creando usuario nuevo con profileImage:', profileImage);
       user = await User.create({ 
         email, 
         password: null, 
         fullName,
-        profileImage: profileImage || null
+        profileImage: profileImage || null // ✅ IMPORTANTE: Guardar la imagen
       });
-      console.log('✅ User created with profileImage:', user.profileImage);
+      console.log('✅ Usuario creado. ProfileImage guardado:', user.profileImage);
     } else {
-      // Actualizar usuario existente con nuevos datos de Google
-       const updateData = { 
+      // ✅ IMPORTANTE: Actualizar usuario existente incluyendo la imagen
+      console.log('🔄 Actualizando usuario existente');
+      const updateData = { 
         fullName,
-        profileImage: profileImage || null  // ← Cambio: Siempre actualizar, incluso si es null
-      };
-      await user.update(updateData);
-      console.log('✅ Usuario actualizado. ProfileImage:', profileImage);
-      user = await User.findOne({ where: { email } });
-    }
-
-    const token = authService.generateToken({ 
-      id: user.id, 
-      email: user.email 
-    }, 'user');
-
-    return {
-      token,
-      user: authService.sanitizeEntity(user)
+        profileImage: profileImage || user.profileImage // ✅ Actualizar imagen o mantener la existente
     };
+      
+      console.log('📝 Datos a actualizar:', updateData);
+      await user.update(updateData);
+      
+      // ✅ Recargar el usuario para obtener los datos actualizados
+      user = await User.findOne({ where: { email } });
+      console.log('✅ Usuario actualizado. ProfileImage final:', user.profileImage);
   }
+
+  const token = authService.generateToken({ 
+    id: user.id, 
+    email: user.email 
+  }, 'user');
+
+  return {
+    token,
+    user: authService.sanitizeEntity(user)
+  };
+}
 
   /**
    * Actualiza la contraseña de un usuario
