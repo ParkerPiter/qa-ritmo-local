@@ -64,46 +64,43 @@ class UserService {
    * @returns {Promise<Object>} Usuario y token
    */
   async authenticateWithGoogle({ email, fullName, profileImage }) {
-    console.log('🔍 Datos recibidos en backend:', { email, fullName, profileImage }); // DEBUG
+    console.log('🔍 Service - Datos recibidos:', { email, fullName, profileImage }); // DEBUG
     
     let user = await User.findOne({ where: { email } });
 
     if (!user) {
-      // ✅ Crear nuevo usuario con la imagen de Google
+      // Crear nuevo usuario con la imagen de Google
       console.log('➕ Creando usuario nuevo con profileImage:', profileImage);
       user = await User.create({ 
         email, 
         password: null, 
         fullName,
-        profileImage: profileImage || null // ✅ IMPORTANTE: Guardar la imagen
+        profileImage: profileImage || null
       });
       console.log('✅ Usuario creado. ProfileImage guardado:', user.profileImage);
     } else {
-      // ✅ IMPORTANTE: Actualizar usuario existente incluyendo la imagen
+      // Actualizar usuario existente con nuevos datos de Google
       console.log('🔄 Actualizando usuario existente');
-      const updateData = { 
-        fullName,
-        profileImage: profileImage || user.profileImage // ✅ Actualizar imagen o mantener la existente
-    };
-      
+      const updateData = { fullName };
+      if (profileImage) {
+        updateData.profileImage = profileImage;
+      }
       console.log('📝 Datos a actualizar:', updateData);
       await user.update(updateData);
-      
-      // ✅ Recargar el usuario para obtener los datos actualizados
       user = await User.findOne({ where: { email } });
       console.log('✅ Usuario actualizado. ProfileImage final:', user.profileImage);
+    }
+
+    const token = authService.generateToken({ 
+      id: user.id, 
+      email: user.email 
+    }, 'user');
+
+    return {
+      token,
+      user: authService.sanitizeEntity(user)
+    };
   }
-
-  const token = authService.generateToken({ 
-    id: user.id, 
-    email: user.email 
-  }, 'user');
-
-  return {
-    token,
-    user: authService.sanitizeEntity(user)
-  };
-}
 
   /**
    * Actualiza la contraseña de un usuario
@@ -203,7 +200,7 @@ class UserService {
     const user = await User.findByPk(userId);
     
     if (!user) {
-      const error = new Error('User not found');
+      const error = new Error('Usuario no encontrado');
       error.statusCode = 404;
       throw error;
     }
