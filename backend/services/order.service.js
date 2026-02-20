@@ -121,7 +121,7 @@ const confirmOrder = async (stripeSessionId, paymentIntentId = null) => {
             {
               model: Organizador,
               as: 'organizador',
-              attributes: ['id', 'nombre', 'email']
+              attributes: ['id', 'nombreCompleto', 'email']
             },
             {
               model: Categoria,
