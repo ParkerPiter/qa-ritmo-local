@@ -286,7 +286,7 @@ const getOrderByStripeSessionId = async (stripeSessionId) => {
             {
               model: Organizador,
               as: 'organizador',
-              attributes: ['id', 'nombre', 'email']
+              attributes: ['id', 'nombreCompleto', 'email']
             },
             {
               model: Categoria,
@@ -365,7 +365,7 @@ const getUserOrders = async (userId, estado = null) => {
             {
               model: Organizador,
               as: 'organizador',
-              attributes: ['id', 'nombre', 'email']
+              attributes: ['id', 'nombreCompleto', 'email']
             },
             {
               model: Categoria,
