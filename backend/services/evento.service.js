@@ -11,13 +11,13 @@ class EventoService {
       include: [
         {
           model: Categoria,
-          as: 'Categorias',
+          as: 'categorias',
           attributes: ['id', 'nombre', 'tipo'],
           through: { attributes: [] }
         },
         {
           model: Organizador,
-          as: 'Organizador',
+          as: 'organizador',
           attributes: ['id', 'nombreCompleto', 'email']
         }
       ],
@@ -36,13 +36,13 @@ class EventoService {
       include: [
         {
           model: Categoria,
-          as: 'Categorias',
+          as: 'categorias',
           attributes: ['id', 'nombre', 'tipo'],
           through: { attributes: [] }
         },
         {
           model: Organizador,
-          as: 'Organizador',
+          as: 'organizador',
           attributes: ['id', 'nombreCompleto', 'email']
         }
       ]
@@ -65,8 +65,8 @@ class EventoService {
       galeriaImagenes: evento.galeriaImagenes,
       fecha: evento.fecha,
       precio: evento.precio,
-      Organizador: evento.Organizador,
-      Categorias: evento.Categorias
+      organizador: evento.organizador,
+      categorias: evento.categorias
     };
   }
 
