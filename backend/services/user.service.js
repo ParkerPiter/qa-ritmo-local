@@ -140,13 +140,13 @@ class UserService {
               include: [
                 {
                   model: Categoria,
-                  as: 'Categorias',
+                  as: 'categorias',
                   attributes: ['id', 'nombre', 'tipo'],
                   through: { attributes: [] }
                 },
                 {
                   model: Organizador,
-                  as: 'Organizador',
+                  as: 'organizador',
                   attributes: ['id', 'nombreCompleto', 'email']
                 }
               ]
@@ -165,13 +165,13 @@ class UserService {
               include: [
                 {
                   model: Categoria,
-                  as: 'Categorias',
+                  as: 'categorias',
                   attributes: ['id', 'nombre', 'tipo'],
                   through: { attributes: [] }
                 },
                 {
                   model: Organizador,
-                  as: 'Organizador',
+                  as: 'organizador',
                   attributes: ['id', 'nombreCompleto', 'email']
                 }
               ]
@@ -291,13 +291,13 @@ class UserService {
           include: [
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre', 'tipo'],
               through: { attributes: [] }
             },
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombreCompleto', 'email']
             }
           ]
