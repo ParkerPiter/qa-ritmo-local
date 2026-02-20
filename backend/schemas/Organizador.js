@@ -29,7 +29,10 @@ module.exports = (sequelize, DataTypes) => {
     });
   
     Organizador.associate = (models) => {
-      Organizador.hasMany(models.Evento, { foreignKey: 'organizadorId' });
+      Organizador.hasMany(models.Evento, { 
+        as: 'eventos',  // Agregar alias
+        foreignKey: 'organizadorId' 
+      });
     };
   
     return Organizador;
