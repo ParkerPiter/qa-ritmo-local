@@ -43,7 +43,7 @@ const createOrder = async ({ userId, eventoId, cantidad, precioTotal, stripeSess
             {
               model: Organizador,
               as: 'organizador',
-              attributes: ['id', 'nombre', 'email']
+              attributes: ['id', 'nombreCompleto', 'email']
             },
             {
               model: Categoria,
