@@ -65,7 +65,6 @@ const createCheckout = async (req, res) => {
         const unitPrice = amount / quantity; // Precio por ticket en dólares
         const unitAmountInCents = Math.round(unitPrice * 100); // Convertir a centavos y redondear
 
-
         // Crear sesión de checkout
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -82,8 +81,8 @@ const createCheckout = async (req, res) => {
                 quantity: quantity || 1 ,
             }],
             mode: 'payment',
-            success_url: `${baseUrl}?showSuccessModal=true&session_id={CHECKOUT_SESSION_ID}&eventId=${eventId}`,
-            cancel_url: `${baseUrl}?showCancelModal=true&userId=${userId}&eventId=${eventId}`,
+            success_url: `${baseUrl}/event/${eventId}?showSuccessModal=true&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/event/${eventId}?showCancelModal=true&userId=${userId}`,
             metadata: {
                 eventId: eventId.toString(),
                 userId: userId.toString(),
@@ -140,24 +139,21 @@ const handleSuccess = async (req, res) => {
             });
         }
 
+        console.log(`✅ Procesando pago exitoso para session: ${session_id}`);
+
         // Recuperar la sesión de Stripe
         const session = await stripe.checkout.sessions.retrieve(session_id);
 
-        // Buscar la orden en la base de datos
-        const order = await orderService.getOrderByStripeSessionId(session_id);
+        console.log(`📋 Estado de pago en Stripe: ${session.payment_status}`);
 
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Not found order associated with this session ID'
-            });
-        }
+        // Confirmar la orden (actualiza de pending a paid)
+        const order = await orderService.confirmOrder(session_id, session.payment_intent);
+
+        console.log(`✅ Orden ${order.id} confirmada como pagada`);
 
         res.status(200).json({
             success: true,
-            message: order.estado === 'paid' 
-                ? 'Confirm payment successful and order confirmed' 
-                : 'Payment confirmation in process',
+            message: 'Payment confirmed successfully',
             data: {
                 sessionId: session_id,
                 paymentStatus: session.payment_status,
