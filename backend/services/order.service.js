@@ -42,12 +42,12 @@ const createOrder = async ({ userId, eventoId, cantidad, precioTotal, stripeSess
           include: [
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombre', 'email']
             },
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre'],
               through: { attributes: [] }
             }
@@ -120,12 +120,12 @@ const confirmOrder = async (stripeSessionId, paymentIntentId = null) => {
           include: [
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombre', 'email']
             },
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre'],
               through: { attributes: [] }
             }
@@ -226,12 +226,12 @@ const getOrderById = async (orderId, userId = null) => {
           include: [
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombre', 'email']
             },
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre'],
               through: { attributes: [] }
             }
@@ -285,12 +285,12 @@ const getOrderByStripeSessionId = async (stripeSessionId) => {
           include: [
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombre', 'email']
             },
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre'],
               through: { attributes: [] }
             }
@@ -364,12 +364,12 @@ const getUserOrders = async (userId, estado = null) => {
           include: [
             {
               model: Organizador,
-              as: 'Organizador',
+              as: 'organizador',
               attributes: ['id', 'nombre', 'email']
             },
             {
               model: Categoria,
-              as: 'Categorias',
+              as: 'categorias',
               attributes: ['id', 'nombre'],
               through: { attributes: [] }
             }
