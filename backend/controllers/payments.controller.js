@@ -61,6 +61,10 @@ const createCheckout = async (req, res) => {
             console.log('No se proporcionó URL de imagen');
         }
 
+        // Calcular precio unitario (el amount que viene del frontend ya es el total)
+        const unitPrice = Math.round(amount / quantity); // Precio por ticket
+        const unitAmountInCents = unitPrice * 100; // Convertir a centavos
+
         // Crear sesión de checkout
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -72,9 +76,9 @@ const createCheckout = async (req, res) => {
                         description: `Entrada para el evento: ${eventTitle}`,
                         images: validImageUrl ? [validImageUrl] : [],
                     },
-                    unit_amount: Math.round((amount / quantity) * 100), // Stripe usa centavos
+                    unit_amount: unitAmountInCents // Stripe usa centavos
                 },
-                quantity: quantity,
+                quantity: quantity || 1 ,
             }],
             mode: 'payment',
             success_url: `${baseUrl}?showSuccessModal=true&session_id={CHECKOUT_SESSION_ID}&eventId=${eventId}`,
@@ -82,7 +86,7 @@ const createCheckout = async (req, res) => {
             metadata: {
                 eventId: eventId.toString(),
                 userId: userId.toString(),
-                quantity: quantity.toString()
+                quantity: (quantity || 1).toString()
             },
             customer_email: userEmail
         });
@@ -91,7 +95,7 @@ const createCheckout = async (req, res) => {
         const order = await orderService.createOrder({
             userId,
             eventoId: eventId,
-            cantidad: quantity,
+            cantidad: quantity || 1,
             precioTotal: amount,
             stripeSessionId: session.id
         });
