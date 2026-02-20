@@ -62,8 +62,9 @@ const createCheckout = async (req, res) => {
         }
 
         // Calcular precio unitario (el amount que viene del frontend ya es el total)
-        const unitPrice = Math.round(amount / quantity); // Precio por ticket
-        const unitAmountInCents = unitPrice * 100; // Convertir a centavos
+        const unitPrice = amount / quantity; // Precio por ticket en dólares
+        const unitAmountInCents = Math.round(unitPrice * 100); // Convertir a centavos y redondear
+
 
         // Crear sesión de checkout
         const session = await stripe.checkout.sessions.create({
