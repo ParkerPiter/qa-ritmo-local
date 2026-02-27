@@ -21,6 +21,7 @@ userRoutes.get('/profile', authenticateToken, userController.getProfile);
 userRoutes.put('/profile', authenticateToken, userController.updateProfile);
 
 // Actualizar contraseña
+userRoutes.put('/password', authenticateToken, userController.updatePassword);
 userRoutes.put('/update', authenticateToken, userController.updateUser);
 
 // Favoritos

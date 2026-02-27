@@ -1,239 +1,334 @@
 const userService = require('../services/user.service');
-const { handleError, handleSuccess } = require('../utils/responseHandler');
+const { handleSuccess, handleError } = require('../utils/responseHandler');
 
-async function getAllUsers(req, res) {
-    try {
-        const users = await userService.getAllUsers();
-        handleSuccess(res, { users });
-    } catch (error) {
-        handleError(res, error);
-    }
-}
-
+/**
+ * Crea un nuevo usuario
+ */
 async function createUser(req, res) {
-    try {
-        const { email, fullName, password } = req.body;
-        
-        if (!email || !fullName || !password) {
-            const error = new Error('Email, nombre completo y contraseña son requeridos');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const user = await userService.createUser({ email, fullName, password });
-        handleSuccess(res, {
-            message: 'Usuario creado exitosamente',
-            user
-        }, 201);
-    } catch (error) {
-        handleError(res, error);
+  try {
+    const { email, fullName, password } = req.body;
+    
+    if (!email || !fullName || !password) {
+      return res.status(400).json({ 
+        message: 'Email, nombre completo y contraseña son requeridos' 
+      });
     }
+
+    const user = await userService.createUser({ email, fullName, password });
+    
+    handleSuccess(res, {
+      message: 'User created successfully',
+      user
+    }, 201);
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Login con email y contraseña
+ */
 async function loginUser(req, res) {
-    try {
-        const { email, password } = req.body;
-        
-        if (!email || !password) {
-            const error = new Error('Email y contraseña son requeridos');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const result = await userService.authenticateUser(email, password);
-        handleSuccess(res, {
-            message: 'Usuario logueado exitosamente',
-            ...result
-        });
-    } catch (error) {
-        handleError(res, error);
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email y contraseña son requeridos' 
+      });
     }
+
+    const result = await userService.authenticateUser(email, password);
+    
+    handleSuccess(res, {
+      message: 'User logged in successfully',
+      ...result
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Login con Google
+ * ✅ AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+ */
 async function loginWithGoogle(req, res) {
-    try {
-        const { email, fullName, profileImage } = req.body;
-        
-        if (!email || !fullName) {
-            const error = new Error('Email y nombre completo son requeridos');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const result = await userService.authenticateWithGoogle({ email, fullName, profileImage });
-        handleSuccess(res, {
-            message: 'Usuario logueado con Google exitosamente',
-            ...result
-        });
-    } catch (error) {
-        handleError(res, error);
+  try {
+    // ✅ FIX: El frontend envía 'photoURL', mapearlo a 'profileImage'
+    const { email, fullName, photoURL } = req.body;
+    
+    console.log('📥 Request body completo:', req.body); // DEBUG
+    console.log('📸 photoURL extraído:', photoURL); // DEBUG
+    
+    if (!email || !fullName) {
+      return res.status(400).json({ 
+        message: 'Email y nombre completo son requeridos' 
+      });
     }
+    
+    // ✅ CAMBIO AQUÍ: Mapear photoURL -> profileImage
+    const result = await userService.authenticateWithGoogle({ 
+      email, 
+      fullName, 
+      profileImage: photoURL // ✅ Mapear correctamente
+    });
+    
+    handleSuccess(res, {
+      message: 'User logged in with Google successfully',
+      ...result
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
-async function updateUser(req, res) {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            const error = new Error('Email y nueva contraseña son requeridos');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        await userService.updatePassword(email, password);
-        handleSuccess(res, {
-            message: 'Contraseña actualizada exitosamente'
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
-}
-
-async function deleteUser(req, res) {
-    try {
-        const { email } = req.body;
-        
-        if (!email) {
-            const error = new Error('Email es requerido');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        await userService.deleteUser(email);
-        handleSuccess(res, {
-            message: 'Usuario eliminado exitosamente'
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
-}
-
-async function findUserByEmail(req, res) {
-    try {
-        const { email } = req.query;
-        
-        if (!email) {
-            const error = new Error('Email es requerido');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const user = await userService.findByEmail(email);
-        handleSuccess(res, { user });
-    } catch (error) {
-        handleError(res, error);
-    }
-}
-
+/**
+ * Obtiene el perfil del usuario autenticado
+ */
 async function getProfile(req, res) {
-    try {
-        const userId = req.user.id;
-        const profile = await userService.getUserProfile(userId);
-        handleSuccess(res, { 
-            message: 'Get user profile successfully',
-            profile 
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
+  try {
+    const userId = req.user.id; // Del middleware de autenticación
+    
+    const profile = await userService.getUserProfile(userId);
+    
+    handleSuccess(res, {
+      message: 'Get user profile successfully',
+      profile
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Actualiza el perfil del usuario autenticado
+ */
 async function updateProfile(req, res) {
-    try {
-        const userId = req.user.id;
-        const updateData = req.body;
-        
-        const user = await userService.updateProfile(userId, updateData);
-        handleSuccess(res, {
-            message: 'Profile updated successfully',
-            user
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
+  try {
+    const userId = req.user.id;
+    const updateData = req.body;
+    
+    const updatedUser = await userService.updateProfile(userId, updateData);
+    
+    handleSuccess(res, {
+      message: 'User profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
-async function getFavorites(req, res) {
-    try {
-        const userId = req.user.id;
-        const favorites = await userService.getFavorites(userId);
-        handleSuccess(res, {
-            message: 'Favoritos obtenidos exitosamente',
-            favorites
-        });
-    } catch (error) {
-        handleError(res, error);
+/**
+ * Actualiza la contraseña del usuario autenticado (requiere contraseña actual)
+ */
+async function updatePassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ 
+        message: 'Actual password and new password are required' 
+      });
     }
+
+    if (newPassword.length < 7) {
+      return res.status(400).json({ 
+        message: 'The new password must be at least 7 characters long' 
+      });
+    }
+    
+    await userService.updatePasswordSecure(userId, currentPassword, newPassword);
+    
+    handleSuccess(res, {
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Actualiza la contraseña del usuario (ANTIGUA - solo para admin)
+ */
+async function updateUser(req, res) {
+  try {
+    const { email, newPassword } = req.body;
+    
+    if (!email || !newPassword) {
+      return res.status(400).json({ 
+        message: 'Email y nueva contraseña son requeridos' 
+      });
+    }
+    
+    await userService.updatePassword(email, newPassword);
+    
+    handleSuccess(res, {
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+/**
+ * Añade un evento a favoritos
+ */
 async function addFavorite(req, res) {
-    try {
-        const userId = req.user.id;
-        const { eventoId } = req.body;
-        
-        if (!eventoId) {
-            const error = new Error('Event ID is required');
-            error.statusCode = 400;
-            throw error;
-        }
-        
-        const favorite = await userService.addFavorite(userId, eventoId);
-        handleSuccess(res, {
-            message: 'Event added to favorites',
-            favorite
-        }, 201);
-    } catch (error) {
-        handleError(res, error);
+  try {
+    const userId = req.user.id;
+    const { eventoId } = req.body;
+    
+    if (!eventoId) {
+      return res.status(400).json({ 
+        message: 'Event ID is required' 
+      });
     }
+    
+    const favorito = await userService.addFavorite(userId, eventoId);
+    
+    handleSuccess(res, {
+      message: 'Event added to favorites successfully',
+      favorito
+    }, 201);
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Elimina un evento de favoritos
+ */
 async function removeFavorite(req, res) {
-    try {
-        const userId = req.user.id;
-        const { eventoId } = req.params;
-        
-        if (!eventoId) {
-            const error = new Error('Event ID is required');
-            error.statusCode = 400;
-            throw error;
-        }
-        
-        await userService.removeFavorite(userId, parseInt(eventoId));
-        handleSuccess(res, {
-            message: 'Event removed from favorites'
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
+  try {
+    const userId = req.user.id;
+    const { eventoId } = req.params;
+    
+    await userService.removeFavorite(userId, parseInt(eventoId));
+    
+    handleSuccess(res, {
+      message: 'Event removed from favorites successfully'
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
+/**
+ * Obtiene los favoritos del usuario
+ */
+async function getFavorites(req, res) {
+  try {
+    const userId = req.user.id;
+    
+    const favoritos = await userService.getFavorites(userId);
+    
+    handleSuccess(res, {
+      message: 'Get favorites successfully',
+      favorites: favoritos
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+/**
+ * Obtiene las órdenes del usuario
+ */
 async function getOrders(req, res) {
-    try {
-        const userId = req.user.id;
-        const { estado } = req.query; // Optional filter: 'pending', 'paid', 'cancel'
-        
-        const orders = await userService.getUserOrders(userId, estado);
-        handleSuccess(res, {
-            message: 'Orders retrieved successfully',
-            orders
-        });
-    } catch (error) {
-        handleError(res, error);
-    }
+  try {
+    const userId = req.user.id;
+    const { estado } = req.query;
+    
+    const orders = await userService.getUserOrders(userId, estado);
+    
+    handleSuccess(res, {
+      message: 'Get orders successfully',
+      orders
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
 }
 
-module.exports = { 
-    getAllUsers, 
-    createUser, 
-    updateUser, 
-    deleteUser, 
-    loginUser, 
-    loginWithGoogle, 
-    findUserByEmail,
-    getProfile,
-    updateProfile,
-    getFavorites,
-    addFavorite,
-    removeFavorite,
-    getOrders
+/**
+ * Obtiene todos los usuarios (admin)
+ */
+async function getAllUsers(req, res) {
+  try {
+    const users = await userService.getAllUsers();
+    
+    handleSuccess(res, {
+      message: 'Get all users successfully',
+      users
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+/**
+ * Busca un usuario por email (admin)
+ */
+async function findUserByEmail(req, res) {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        message: 'Email is required' 
+      });
+    }
+    
+    const user = await userService.findByEmail(email);
+    
+    handleSuccess(res, {
+      message: 'User found successfully',
+      user
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+/**
+ * Elimina un usuario (admin)
+ */
+async function deleteUser(req, res) {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        message: 'Email is required' 
+      });
+    }
+    
+    await userService.deleteUser(email);
+    
+    handleSuccess(res, {
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+module.exports = {
+  createUser,
+  loginUser,
+  loginWithGoogle,
+  getProfile,
+  updateProfile,
+  updatePassword,
+  updateUser,
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  getOrders,
+  getAllUsers,
+  findUserByEmail,
+  deleteUser
 };

@@ -200,7 +200,7 @@ class UserService {
     const user = await User.findByPk(userId);
     
     if (!user) {
-      const error = new Error('Usuario no encontrado');
+      const error = new Error('User not found');
       error.statusCode = 404;
       throw error;
     }
@@ -223,6 +223,43 @@ class UserService {
     await user.update(dataToUpdate);
     
     return authService.sanitizeEntity(user);
+  }
+
+  /**
+   * Actualiza la contraseña de un usuario (requiere contraseña actual)
+   * @param {number} userId - ID del usuario
+   * @param {string} currentPassword - Contraseña actual
+   * @param {string} newPassword - Nueva contraseña
+   * @returns {Promise<void>}
+   */
+  async updatePasswordSecure(userId, currentPassword, newPassword) {
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Verificar que el usuario tenga contraseña (no sea de Google)
+    if (!user.password) {
+      const error = new Error('This user is registered with Google. Password update is not available');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Verificar contraseña actual
+    const isPasswordValid = await authService.comparePassword(currentPassword, user.password);
+    
+    if (!isPasswordValid) {
+      const error = new Error('The current password is incorrect');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Update with the new password
+    const hashedPassword = await authService.hashPassword(newPassword);
+    await user.update({ password: hashedPassword });
   }
 
   /**

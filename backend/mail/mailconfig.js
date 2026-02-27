@@ -1,28 +1,9 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Crear el transporter una sola vez
-const transporter = nodemailer.createTransport({
-  // service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 587,      // <--- CAMBIO 1: Puerto estándar para envíos cloud
-  secure: false,  // <--- CAMBIO 2: false para puerto 587 (usa STARTTLS)
-  auth: {
-    user: process.env.EMAIL_ADMIN,
-    pass: process.env.EMAIL_PASS,
-  },
-  family: 4, // Forzar IPv4
-  // Añadir opciones de timeout y retry
-  tls: {
-    rejectUnauthorized: true, 
-  },
-  connectionTimeout: 30000, // 30 segundos
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-  logger: true, // Cambiar a true para ver logs detallados
-  debug: true, // Cambiar a true para debugging
-});
+// Inicializar Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /* Genera un token numérico de 4 dígitos como string. */
 function generate4DigitToken() {
@@ -36,14 +17,18 @@ function generate4DigitToken() {
  * @returns {Promise}
  */
 async function sendLoginToken(to, token) {
-  const mailOptions = {
+  const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_ADMIN,
-    to,
+    to: [to],
     subject: 'Your access code',
     text: `Your access code is: ${token}`,
-  };
+  });
 
-  return transporter.sendMail(mailOptions);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 /**
@@ -60,13 +45,13 @@ async function sendLoginToken(to, token) {
 async function sendContactEmail(params) {
   const { toAdmin, toUser, name, email, subject, message } = params;
 
-  let mailOptions;
+  let emailOptions;
 
   if (toAdmin) {
     // Correo para el administrador
-    mailOptions = {
+    emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: process.env.EMAIL_ADMIN,
+      to: [process.env.EMAIL_ADMIN],
       subject: `New contact message: ${subject}`,
       html: `
         <h3>New contact message</h3>
@@ -76,13 +61,13 @@ async function sendContactEmail(params) {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
-      replyTo: email
+      reply_to: email
     };
   } else {
     // Copia para el usuario
-    mailOptions = {
+    emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: toUser,
+      to: [toUser],
       subject: `Copy of your message: ${subject}`,
       html: `
         <h3>Thank you for contacting us</h3>
@@ -100,7 +85,13 @@ async function sendContactEmail(params) {
     };
   }
 
-  return transporter.sendMail(mailOptions);
+  const { data, error } = await resend.emails.send(emailOptions);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 module.exports = {

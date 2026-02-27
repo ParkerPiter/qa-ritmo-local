@@ -20,7 +20,7 @@
     "nodemailer": "^7.0.3",
     "pg": "^8.13.1",
     "progress": "^2.0.3",
-    "resend": "^6.9.1",
+    "resend": "^6.9.2",
     "sequelize": "^6.37.5",
     "stripe": "^20.1.2",
     "swagger-ui-express": "^5.0.1"
