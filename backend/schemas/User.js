@@ -37,8 +37,13 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     profileImage: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true
+    },
+    interests: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: []
     },
   });
 

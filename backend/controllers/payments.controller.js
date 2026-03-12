@@ -35,7 +35,7 @@ const createCheckout = async (req, res) => {
         // Determinar la URL base desde variables de entorno o valor por defecto
         const baseUrl = (process.env.FRONTEND_URL || 
             (process.env.NODE_ENV === 'production' 
-                ? 'https://ritmo-local-test.netlify.app'
+                ? 'http://silverglidertickets.com/'
                 : 'http://localhost:3000')).replace(/\/$/, ''); // Remover barra final si existe
 
         // Validar y construir URL de imagen

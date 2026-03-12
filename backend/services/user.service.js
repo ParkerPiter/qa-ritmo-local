@@ -211,7 +211,19 @@ class UserService {
       'phone',
       'location',
       'profileImage',
+      'email',
+      'interests',
     ];
+
+    // Verificar unicidad del email si se está actualizando
+    if (updateData.email && updateData.email !== user.email) {
+      const existing = await User.findOne({ where: { email: updateData.email } });
+      if (existing) {
+        const error = new Error('Email already in use');
+        error.statusCode = 409;
+        throw error;
+      }
+    }
 
     const dataToUpdate = {};
     allowedFields.forEach(field => {

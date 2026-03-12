@@ -1,9 +1,17 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Inicializar Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Inicializar transporte SMTP
+const transporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST,
+  port: parseInt(process.env.MAIL_PORT),
+  secure: process.env.MAIL_SECURE === 'true',
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
 
 /* Genera un token numérico de 4 dígitos como string. */
 function generate4DigitToken() {
@@ -17,18 +25,16 @@ function generate4DigitToken() {
  * @returns {Promise}
  */
 async function sendLoginToken(to, token) {
-  const { data, error } = await resend.emails.send({
+  const info = await transporter.sendMail({
     from: process.env.EMAIL_ADMIN,
-    to: [to],
+    to,
     subject: 'Your access code',
     text: `Your access code is: ${token}`,
   });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  console.log('[sendLoginToken] messageId:', info.messageId);
+  console.log('[sendLoginToken] accepted:', info.accepted);
+  console.log('[sendLoginToken] rejected:', info.rejected);
+  console.log('[sendLoginToken] response:', info.response);
 }
 
 /**
@@ -48,10 +54,9 @@ async function sendContactEmail(params) {
   let emailOptions;
 
   if (toAdmin) {
-    // Correo para el administrador
     emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: [process.env.EMAIL_ADMIN],
+      to: process.env.EMAIL_ADMIN,
       subject: `New contact message: ${subject}`,
       html: `
         <h3>New contact message</h3>
@@ -61,13 +66,12 @@ async function sendContactEmail(params) {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
-      reply_to: email
+      replyTo: email,
     };
   } else {
-    // Copia para el usuario
     emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: [toUser],
+      to: toUser,
       subject: `Copy of your message: ${subject}`,
       html: `
         <h3>Thank you for contacting us</h3>
@@ -81,17 +85,16 @@ async function sendContactEmail(params) {
         <br>
         <p>Best regards,</p>
         <p>Support Team</p>
-      `
+      `,
     };
   }
 
-  const { data, error } = await resend.emails.send(emailOptions);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  const info = await transporter.sendMail(emailOptions);
+  console.log('[sendContactEmail] toAdmin:', toAdmin);
+  console.log('[sendContactEmail] messageId:', info.messageId);
+  console.log('[sendContactEmail] accepted:', info.accepted);
+  console.log('[sendContactEmail] rejected:', info.rejected);
+  console.log('[sendContactEmail] response:', info.response);
 }
 
 module.exports = {
