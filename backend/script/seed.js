@@ -13,7 +13,7 @@ const ubicaciones = ['Los Angeles', 'San Francisco'];
 const eventos = [
   {
     title: "Pop Gala 2026",
-    date: "2026-02-15 20:00:00",
+    date: "2026-03-15 20:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
@@ -22,7 +22,7 @@ const eventos = [
   },
   {
     title: "Indie Rock Fest",
-    date: "2026-02-12 18:00:00",
+    date: "2026-04-12 18:00:00",
     location: "The Fillmore, SF",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
@@ -31,7 +31,7 @@ const eventos = [
   },
   {
     title: "EDM in the Park",
-    date: "2026-02-21 22:00:00",
+    date: "2026-03-21 22:00:00",
     location: "Golden Gate Park, SF",
     image: "/public/images/musicImg.png",
     type: 'Free',
@@ -40,7 +40,7 @@ const eventos = [
   },
   {
     title: "Band vs Band 2026",
-    date: "2026-02-19 16:00:00",
+    date: "2026-03-19 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Free',
@@ -49,7 +49,7 @@ const eventos = [
   },
   {
     title: "Punk Rock Fest",
-    date: "2026-02-28 18:00:00",
+    date: "2026-03-28 18:00:00",
     location: "The Fillmore, SF",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
@@ -58,7 +58,7 @@ const eventos = [
   },
   {
     title: "BTS Live Concert",
-    date: "2026-02-08 22:00:00",
+    date: "2026-04-08 22:00:00",
     location: "Golden Gate Park, SF",
     image: "/public/images/musicImg.png",
     type: 'Paid',
@@ -67,7 +67,7 @@ const eventos = [
   },
    {
     title: "Band vs Band ",
-    date: "2026-02-12 16:00:00",
+    date: "2026-04-12 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
@@ -76,7 +76,7 @@ const eventos = [
   },
    {
     title: "Pop clasic",
-    date: "2026-02-05 16:00:00",
+    date: "2026-04-05 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/musicImg.png",
     type: 'Paid',
@@ -85,7 +85,7 @@ const eventos = [
   },
   {
     title: "90's Rock Punk",
-    date: "2026-01-31 16:00:00",
+    date: "2026-05-31 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
@@ -94,7 +94,7 @@ const eventos = [
   },
     {
     title: "Pop of 20's",
-    date: "2026-02-16 16:00:00",
+    date: "2026-04-16 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
