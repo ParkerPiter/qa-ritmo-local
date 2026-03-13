@@ -82,7 +82,8 @@ class UserService {
       // Actualizar usuario existente con nuevos datos de Google
       console.log('🔄 Actualizando usuario existente');
       const updateData = { fullName };
-      if (profileImage) {
+      // Solo actualizar profileImage con la de Google si el usuario no tiene una imagen personalizada
+      if (profileImage && !user.profileImage) {
         updateData.profileImage = profileImage;
       }
       console.log('📝 Datos a actualizar:', updateData);
