@@ -14,6 +14,8 @@ app.use(cors());
 // Esto DEBE ir ANTES de express.json() para que Stripe pueda verificar la firma
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
+app.use(express.json({ limit: '10mb' }));
+
 // Middleware para parsear JSON en el resto de las rutas
 app.use(express.json());
 
