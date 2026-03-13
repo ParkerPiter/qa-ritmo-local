@@ -1,4 +1,5 @@
 const tokens = {};
+const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 const { generate4DigitToken, sendLoginToken, sendContactEmail } = require('../mail/mailconfig');
 
 async function sendToken (req, res) {
@@ -6,7 +7,7 @@ async function sendToken (req, res) {
   if (!email) return res.status(400).json({ message: 'Email requerido' });
 
   const token = generate4DigitToken();
-  tokens[email] = token;
+  tokens[email] = { code: token, expiresAt: Date.now() + TOKEN_TTL_MS };
 
   try {
     await sendLoginToken(email, token);
@@ -21,12 +22,23 @@ async function verifyToken (req, res) {
   const { email, token } = req.body;
   if (!email || !token) return res.status(400).json({ message: 'Incomplete data' });
 
-  if (tokens[email] && tokens[email] === token) {
+  const entry = tokens[email];
+
+  if (!entry) {
+    return res.status(400).json({ success: false, message: 'No active code found. Please request a new one.' });
+  }
+
+  if (Date.now() > entry.expiresAt) {
+    delete tokens[email];
+    return res.status(400).json({ success: false, message: 'The code has expired. Please request a new one.' });
+  }
+
+  if (entry.code === token) {
     delete tokens[email];
     return res.json({ success: true, message: 'Correct code' });
-  } else {
-    return res.status(400).json({ success: false, message: 'Incorrect code' });
   }
+
+  return res.status(400).json({ success: false, message: 'Incorrect code' });
 };
 
 async function formContact(req, res) {

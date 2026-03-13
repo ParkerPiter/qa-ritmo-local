@@ -1,17 +1,26 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// Inicializar transporte SMTP
-const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: parseInt(process.env.MAIL_PORT),
-  secure: process.env.MAIL_SECURE === 'true',
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-});
+// Inicializar Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEBMAIL (SiteGround SMTP via Nodemailer) — comentado para referencia futura
+// Para activar: comentar el bloque de Resend y descomentar este bloque.
+// Variables .env necesarias: MAIL_HOST, MAIL_PORT, MAIL_SECURE, MAIL_USER, MAIL_PASS
+// ─────────────────────────────────────────────────────────────────────────────
+// const nodemailer = require('nodemailer');
+// const transporter = nodemailer.createTransport({
+//   host: process.env.MAIL_HOST,
+//   port: parseInt(process.env.MAIL_PORT),
+//   secure: process.env.MAIL_SECURE === 'true',
+//   auth: {
+//     user: process.env.MAIL_USER,
+//     pass: process.env.MAIL_PASS,
+//   },
+// });
+// ─────────────────────────────────────────────────────────────────────────────
 
 /* Genera un token numérico de 4 dígitos como string. */
 function generate4DigitToken() {
@@ -25,16 +34,18 @@ function generate4DigitToken() {
  * @returns {Promise}
  */
 async function sendLoginToken(to, token) {
-  const info = await transporter.sendMail({
+  const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_ADMIN,
-    to,
+    to: [to],
     subject: 'Your access code',
-    text: `Your access code is: ${token}`,
+    text: `Your access code is: ${token} \nThis code is valid for 15 minutes.`,
   });
-  console.log('[sendLoginToken] messageId:', info.messageId);
-  console.log('[sendLoginToken] accepted:', info.accepted);
-  console.log('[sendLoginToken] rejected:', info.rejected);
-  console.log('[sendLoginToken] response:', info.response);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 /**
@@ -54,9 +65,10 @@ async function sendContactEmail(params) {
   let emailOptions;
 
   if (toAdmin) {
+    // Correo para el administrador
     emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: process.env.EMAIL_ADMIN,
+      to: [process.env.EMAIL_ADMIN],
       subject: `New contact message: ${subject}`,
       html: `
         <h3>New contact message</h3>
@@ -66,12 +78,13 @@ async function sendContactEmail(params) {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
-      replyTo: email,
+      reply_to: email
     };
   } else {
+    // Copia para el usuario
     emailOptions = {
       from: process.env.EMAIL_ADMIN,
-      to: toUser,
+      to: [toUser],
       subject: `Copy of your message: ${subject}`,
       html: `
         <h3>Thank you for contacting us</h3>
@@ -85,16 +98,17 @@ async function sendContactEmail(params) {
         <br>
         <p>Best regards,</p>
         <p>Support Team</p>
-      `,
+      `
     };
   }
 
-  const info = await transporter.sendMail(emailOptions);
-  console.log('[sendContactEmail] toAdmin:', toAdmin);
-  console.log('[sendContactEmail] messageId:', info.messageId);
-  console.log('[sendContactEmail] accepted:', info.accepted);
-  console.log('[sendContactEmail] rejected:', info.rejected);
-  console.log('[sendContactEmail] response:', info.response);
+  const { data, error } = await resend.emails.send(emailOptions);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 module.exports = {
