@@ -419,7 +419,7 @@ class UserService {
   /**
    * Actualiza el rol del usuario autenticado (no permite asignarse 'admin')
    * @param {number} userId - ID del usuario
-   * @param {string} rol - Nuevo rol ('client', 'partner', 'artis')
+   * @param {string} rol - Nuevo rol ('client', 'partner', 'artist')
    * @returns {Promise<Object>} Datos actualizados del usuario
    */
   async updateRole(userId, rol) {

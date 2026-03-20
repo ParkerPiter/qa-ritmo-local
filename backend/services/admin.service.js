@@ -1,7 +1,7 @@
 const { Admin, User } = require('../schemas');
 const authService = require('./auth.service');
 
-const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artis'];
+const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist'];
 
 class AdminService {
   /**
