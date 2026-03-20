@@ -2,6 +2,8 @@ const { User, UserFav, Order, Evento, Categoria, Organizador } = require('../sch
 const authService = require('./auth.service');
 const orderService = require('./order.service');
 
+const ROLES_USUARIO = ['client', 'partner', 'artist'];
+
 class UserService {
   /**
    * Crea un nuevo usuario
@@ -47,10 +49,10 @@ class UserService {
       throw error;
     }
 
-    const token = authService.generateToken({ 
-      id: user.id, 
-      email: user.email 
-    }, 'user');
+    const token = authService.generateToken({
+      id: user.id,
+      email: user.email
+    }, user.rol);
 
     return {
       token,
@@ -92,10 +94,10 @@ class UserService {
       console.log('✅ Usuario actualizado. ProfileImage final:', user.profileImage);
     }
 
-    const token = authService.generateToken({ 
-      id: user.id, 
-      email: user.email 
-    }, 'user');
+    const token = authService.generateToken({
+      id: user.id,
+      email: user.email
+    }, user.rol);
 
     return {
       token,
@@ -404,7 +406,7 @@ class UserService {
    */
   async deleteUser(email) {
     const user = await User.findOne({ where: { email } });
-    
+
     if (!user) {
       const error = new Error('User not found');
       error.statusCode = 404;
@@ -412,6 +414,30 @@ class UserService {
     }
 
     await user.destroy();
+  }
+
+  /**
+   * Actualiza el rol del usuario autenticado (no permite asignarse 'admin')
+   * @param {number} userId - ID del usuario
+   * @param {string} rol - Nuevo rol ('client', 'partner', 'artis')
+   * @returns {Promise<Object>} Datos actualizados del usuario
+   */
+  async updateRole(userId, rol) {
+    if (!ROLES_USUARIO.includes(rol)) {
+      const error = new Error(`Rol inválido. Los roles permitidos son: ${ROLES_USUARIO.join(', ')}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await user.update({ rol });
+    return { id: user.id, fullName: user.fullName, email: user.email, rol: user.rol };
   }
 }
 

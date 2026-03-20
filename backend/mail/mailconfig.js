@@ -91,7 +91,7 @@ async function sendContactEmail(params) {
         <p>Hello ${name},</p>
         <p>We have received your message and will respond shortly.</p>
         <br>
-        <p><strong>Your message:</strong></p>
+        <p><strong>Your email:</strong></p>
         <p><strong>Subject:</strong> ${subject}</p>
         <p><strong>Message:</strong></p>
         <p>${message}</p>

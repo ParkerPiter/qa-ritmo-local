@@ -316,6 +316,29 @@ async function deleteUser(req, res) {
   }
 }
 
+/**
+ * Actualiza el rol del usuario autenticado (no permite 'admin')
+ */
+async function updateRole(req, res) {
+  try {
+    const userId = req.user.id;
+    const { rol } = req.body;
+
+    if (!rol) {
+      return res.status(400).json({ message: 'El campo rol es requerido' });
+    }
+
+    const user = await userService.updateRole(userId, rol);
+
+    handleSuccess(res, {
+      message: 'Rol actualizado exitosamente',
+      user
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
 module.exports = {
   createUser,
   loginUser,
@@ -324,6 +347,7 @@ module.exports = {
   updateProfile,
   updatePassword,
   updateUser,
+  updateRole,
   addFavorite,
   removeFavorite,
   getFavorites,

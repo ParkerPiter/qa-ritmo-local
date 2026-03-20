@@ -41,4 +41,49 @@ async function loginAdminUser(req, res) {
     }
 }
 
-module.exports = { createUserAdmin, loginAdminUser };
+async function getUsers(req, res) {
+    try {
+        const users = await adminService.getUsersForAdmin();
+        handleSuccess(res, {
+            message: 'Usuarios obtenidos exitosamente',
+            users
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function updateUserRole(req, res) {
+    try {
+        const { id } = req.params;
+        const { rol } = req.body;
+
+        if (!rol) {
+            const error = new Error('El campo rol es requerido');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const user = await adminService.updateUserRole(id, rol);
+        handleSuccess(res, {
+            message: 'Rol actualizado exitosamente',
+            user
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function softDeleteUser(req, res) {
+    try {
+        const { id } = req.params;
+        await adminService.softDeleteUser(id);
+        handleSuccess(res, {
+            message: 'Usuario desactivado exitosamente'
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+module.exports = { createUserAdmin, loginAdminUser, getUsers, updateUserRole, softDeleteUser };

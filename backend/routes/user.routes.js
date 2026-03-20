@@ -24,6 +24,9 @@ userRoutes.put('/profile', authenticateToken, userController.updateProfile);
 userRoutes.put('/password', authenticateToken, userController.updatePassword);
 userRoutes.put('/update', authenticateToken, userController.updateUser);
 
+// Actualizar rol propio (no permite 'admin')
+userRoutes.put('/role', authenticateToken, userController.updateRole);
+
 // Favoritos
 userRoutes.get('/favorites', authenticateToken, userController.getFavorites);
 userRoutes.post('/favorites', authenticateToken, userController.addFavorite);

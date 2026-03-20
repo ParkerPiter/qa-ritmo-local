@@ -42,6 +42,16 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: []
     },
+    rol: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'client'
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
   });
 
   User.associate = (models) => {

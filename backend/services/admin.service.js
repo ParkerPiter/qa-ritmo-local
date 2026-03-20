@@ -1,5 +1,7 @@
-const { Admin } = require('../schemas');
+const { Admin, User } = require('../schemas');
 const authService = require('./auth.service');
+
+const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artis'];
 
 class AdminService {
   /**
@@ -57,6 +59,55 @@ class AdminService {
   async getAllAdmins() {
     const admins = await Admin.findAll();
     return admins.map(admin => authService.sanitizeEntity(admin));
+  }
+
+  /**
+   * Obtiene todos los usuarios con campos relevantes para el panel admin
+   * @returns {Promise<Array>} Lista de usuarios con id, fullName, email, rol, isActive
+   */
+  async getUsersForAdmin() {
+    return User.findAll({
+      attributes: ['id', 'fullName', 'email', 'rol', 'isActive']
+    });
+  }
+
+  /**
+   * Actualiza el rol de un usuario
+   * @param {number} userId - ID del usuario
+   * @param {string} rol - Nuevo rol ('user', 'admin', 'organizador')
+   * @returns {Promise<Object>} Usuario actualizado
+   */
+  async updateUserRole(userId, rol) {
+    if (!ROLES_PERMITIDOS.includes(rol)) {
+      const error = new Error(`Rol inválido. Los roles permitidos son: ${ROLES_PERMITIDOS.join(', ')}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const error = new Error('Usuario no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await user.update({ rol });
+    return { id: user.id, fullName: user.fullName, email: user.email, rol: user.rol, isActive: user.isActive };
+  }
+
+  /**
+   * Realiza borrado lógico de un usuario (isActive = false)
+   * @param {number} userId - ID del usuario
+   */
+  async softDeleteUser(userId) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const error = new Error('Usuario no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await user.update({ isActive: false });
   }
 }
 

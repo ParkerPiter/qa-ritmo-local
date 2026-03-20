@@ -1,4 +1,5 @@
-const { sequelize, Evento, Organizador, Categoria } = require('../schemas');
+const bcrypt = require('bcryptjs');
+const { sequelize, Evento, Organizador, Categoria, Admin, User } = require('../schemas');
 
 const tipos = ['Paid', 'Free'];
 const generos = [
@@ -107,6 +108,22 @@ async function seed() {
   try {
     await sequelize.sync({ force: true });
     console.log('Database synced!');
+
+    // Crear Admin
+    await Admin.create({
+      email: 'silverglidertickets@gmail.com',
+      password: await bcrypt.hash('S!lv3rGl!d3r', 10)
+    });
+    console.log('Admin seeded!');
+
+    // Crear User artist
+    await User.create({
+      email: 'artist.test@gmail.com',
+      fullName: 'Artist Test',
+      password: await bcrypt.hash('S!lv3rGl!d3r', 10),
+      rol: 'artist'
+    });
+    console.log('Artist user seeded!');
 
     // Crear Organizadores
     const organizador1 = await Organizador.create({
