@@ -111,8 +111,45 @@ async function sendContactEmail(params) {
   return data;
 }
 
+/**
+ * Envía un correo de confirmación al usuario cuando solicita un cambio de rol.
+ * @param {string} to - Email del usuario
+ * @param {string} fullName - Nombre completo del usuario
+ * @param {string} rolSolicitado - Rol al que aplica ('artist' | 'partner')
+ * @param {string} fechaSolicitud - Fecha de la solicitud (ISO string)
+ * @returns {Promise}
+ */
+async function sendRoleRequestConfirmation(to, fullName, rolSolicitado, fechaSolicitud) {
+  const rolLabel = rolSolicitado === 'artist' ? 'Artista' : 'Partner';
+  const fecha = new Date(fechaSolicitud).toLocaleDateString('es-ES', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_ADMIN,
+    to: [to],
+    subject: `Change role to ${rolLabel} request received`,
+    html: `
+      <h2>Hi ${fullName},</h2>
+      <p>We have received your request to change your role to <strong>${rolLabel}</strong>.</p>
+      <p><strong>Request date:</strong> ${fecha}</p>
+      <p>Our team will review your request and notify you once there is a response.</p>
+      <br>
+      <p>Thank you for being part of our community.</p>
+      <p>— The Silver Glider Tickets Team</p>
+    `
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 module.exports = {
   generate4DigitToken,
   sendLoginToken,
   sendContactEmail,
+  sendRoleRequestConfirmation,
 };

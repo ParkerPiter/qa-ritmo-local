@@ -3,10 +3,33 @@ const eventosRouter = express.Router();
 
 const eventosController = require('../controllers/eventos.controller');
 const authenticateToken = require('../middleware/auth.Middleware');
+const requireRoles = require('../middleware/requireRoles');
 
-eventosRouter.get('/', eventosController.getAllEventos); // Public Route
-eventosRouter.get('/:id', eventosController.getEventoById); // Public
-// eventosRouter.get('/category/:categoria', eventosController.getEventosByCategoria); // Public Route
-// eventosRouter.get('/organizer/:organizadorId', eventosController.getEventosByOrganizador); // Public Route
+// ============ RUTAS PÚBLICAS ============
+eventosRouter.get('/', eventosController.getAllEventos);
+eventosRouter.get('/:id', eventosController.getEventoById);
 
-module.exports = eventosRouter; 
+// ============ RUTAS PROTEGIDAS ============
+// Solo admin, artist y partner pueden crear y editar eventos
+eventosRouter.post(
+  '/',
+  authenticateToken,
+  requireRoles(['admin', 'artist', 'partner']),
+  eventosController.createEvento
+);
+
+eventosRouter.put(
+  '/:id',
+  authenticateToken,
+  requireRoles(['admin', 'artist', 'partner']),
+  eventosController.updateEvento
+);
+
+eventosRouter.delete(
+  '/:id',
+  authenticateToken,
+  requireRoles(['admin']),
+  eventosController.deleteEvento
+);
+
+module.exports = eventosRouter;

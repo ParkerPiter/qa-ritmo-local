@@ -27,6 +27,9 @@ userRoutes.put('/update', authenticateToken, userController.updateUser);
 // Actualizar rol propio (no permite 'admin')
 userRoutes.put('/role', authenticateToken, userController.updateRole);
 
+// Solicitar cambio de rol (client → artist | partner)
+userRoutes.post('/role-request', authenticateToken, userController.requestRoleChange);
+
 // Favoritos
 userRoutes.get('/favorites', authenticateToken, userController.getFavorites);
 userRoutes.post('/favorites', authenticateToken, userController.addFavorite);

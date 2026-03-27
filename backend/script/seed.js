@@ -125,6 +125,15 @@ async function seed() {
     });
     console.log('Artist user seeded!');
 
+    // Crear User partner
+    await User.create({
+      email: 'partner.test@gmail.com',
+      fullName: 'Partner Test',
+      password: await bcrypt.hash('S!lv3rGl!d3r', 10),
+      rol: 'partner'
+    });
+    console.log('Partner user seeded!');
+
     // Crear Organizadores
     const organizador1 = await Organizador.create({
       email: 'organizador1@example.com',

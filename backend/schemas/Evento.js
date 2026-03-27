@@ -47,17 +47,34 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Organizadors',
         key: 'id'
       },
-      allowNull: false
+      allowNull: true,
+      defaultValue: null
     },
     precio: {
       type: DataTypes.FLOAT,
       allowNull: false
+    },
+    partnerUserId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      references: {
+        model: 'Users',
+        key: 'id'
+      }
+    },
+    maxTicketsPorUsuario: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
+      validate: { min: 1 }
     },
   });
 
   Evento.associate = (models) => {
     Evento.belongsTo(models.Organizador, { as: 'organizador', foreignKey: 'organizadorId' });
     Evento.belongsToMany(models.Categoria, { as: 'categorias', through: 'EventoCategorias', foreignKey: 'eventoId' });
+    Evento.belongsTo(models.User, { as: 'partner', foreignKey: 'partnerUserId' });
   };
 
   return Evento;

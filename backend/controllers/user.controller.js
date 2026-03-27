@@ -339,6 +339,29 @@ async function updateRole(req, res) {
   }
 }
 
+/**
+ * Solicita un cambio de rol (client → artist | partner)
+ */
+async function requestRoleChange(req, res) {
+  try {
+    const { rolSolicitado } = req.body;
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+
+    if (!rolSolicitado) {
+      return res.status(400).json({ message: 'El campo rolSolicitado es requerido' });
+    }
+
+    const solicitud = await userService.createRoleRequest(userId, userEmail, rolSolicitado);
+    handleSuccess(res, {
+      message: 'Solicitud enviada exitosamente. Recibirás un correo de confirmación.',
+      solicitud
+    }, 201);
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
 module.exports = {
   createUser,
   loginUser,
@@ -348,6 +371,7 @@ module.exports = {
   updatePassword,
   updateUser,
   updateRole,
+  requestRoleChange,
   addFavorite,
   removeFavorite,
   getFavorites,

@@ -4,6 +4,10 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const orderService = require('../services/order.service');
+const connectService = require('../services/connect.service');
+const { Evento, User } = require('../schemas');
+
+const PLATFORM_FEE_PERCENT = 0.05; // 5% para la plataforma
 
 // Crear sesión de checkout de Stripe
 const createCheckout = async (req, res) => {
@@ -64,9 +68,28 @@ const createCheckout = async (req, res) => {
         // Calcular precio unitario (el amount que viene del frontend ya es el total)
         const unitPrice = amount / quantity; // Precio por ticket en dólares
         const unitAmountInCents = Math.round(unitPrice * 100); // Convertir a centavos y redondear
+        const totalAmountInCents = Math.round(amount * 100);
 
-        // Crear sesión de checkout
-        const session = await stripe.checkout.sessions.create({
+        // Buscar si el evento tiene un partner con cuenta Stripe activa
+        const evento = await Evento.findByPk(eventId, {
+            attributes: ['partnerUserId']
+        });
+        let partnerConnectData = null;
+        if (evento?.partnerUserId) {
+            const partner = await User.findByPk(evento.partnerUserId, {
+                attributes: ['stripeAccountId', 'stripeOnboardingDone']
+            });
+            if (partner?.stripeOnboardingDone && partner?.stripeAccountId) {
+                partnerConnectData = {
+                    stripeAccountId: partner.stripeAccountId,
+                    applicationFeeAmount: Math.round(totalAmountInCents * PLATFORM_FEE_PERCENT)
+                };
+                console.log(`💳 Pago con split — plataforma: ${partnerConnectData.applicationFeeAmount} centavos, partner: ${partner.stripeAccountId}`);
+            }
+        }
+
+        // Construir parámetros del session según si hay split o no
+        const sessionParams = {
             payment_method_types: ['card'],
             line_items: [{
                 price_data: {
@@ -76,9 +99,9 @@ const createCheckout = async (req, res) => {
                         description: `Entrada para el evento: ${eventTitle}`,
                         images: validImageUrl ? [validImageUrl] : [],
                     },
-                    unit_amount: unitAmountInCents // Stripe usa centavos
+                    unit_amount: unitAmountInCents
                 },
-                quantity: quantity || 1 ,
+                quantity: quantity || 1,
             }],
             mode: 'payment',
             success_url: `${baseUrl}/event/${eventId}?showSuccessModal=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -89,7 +112,19 @@ const createCheckout = async (req, res) => {
                 quantity: (quantity || 1).toString()
             },
             customer_email: userEmail
-        });
+        };
+
+        if (partnerConnectData) {
+            sessionParams.payment_intent_data = {
+                application_fee_amount: partnerConnectData.applicationFeeAmount,
+                transfer_data: {
+                    destination: partnerConnectData.stripeAccountId
+                }
+            };
+        }
+
+        // Crear sesión de checkout
+        const session = await stripe.checkout.sessions.create(sessionParams);
 
         // Crear la orden en la base de datos en estado pending
         const order = await orderService.createOrder({
@@ -240,14 +275,49 @@ const handleWebhook = async (req, res) => {
                 const session = event.data.object;
                 console.log(`✅ Checkout session completed: ${session.id}`);
 
-                // Confirm order if payment was successful
                 if (session.payment_status === 'paid') {
                     const order = await orderService.confirmOrder(
                         session.id,
                         session.payment_intent
                     );
                     console.log(`✅ Order ${order.id} automatically confirmed by webhook`);
+
+                    // Si hubo split, recuperar el PaymentIntent para obtener el transfer y la fee
+                    if (session.payment_intent) {
+                        try {
+                            const paymentIntent = await stripe.paymentIntents.retrieve(
+                                session.payment_intent,
+                                { expand: ['latest_charge.transfer'] }
+                            );
+                            const charge = paymentIntent.latest_charge;
+                            const transfer = charge?.transfer;
+                            const applicationFeeAmount = paymentIntent.application_fee_amount;
+
+                            if (applicationFeeAmount || transfer) {
+                                const totalCents = paymentIntent.amount;
+                                const feeCents = applicationFeeAmount || 0;
+                                const partnerCents = totalCents - feeCents;
+
+                                await orderService.updateSplitData(order.id, {
+                                    platformFee: (feeCents / 100).toFixed(2),
+                                    partnerAmount: (partnerCents / 100).toFixed(2),
+                                    stripeTransferId: transfer?.id || null
+                                });
+                                console.log(`💰 Split guardado — fee: ${feeCents / 100}, partner: ${partnerCents / 100}`);
+                            }
+                        } catch (splitError) {
+                            console.error('⚠️ No se pudo guardar el split del pago:', splitError.message);
+                        }
+                    }
                 }
+                break;
+            }
+
+            // 🔄 CUENTA CONNECT ACTUALIZADA
+            case 'account.updated': {
+                const account = event.data.object;
+                console.log(`🔄 Cuenta Connect actualizada: ${account.id}`);
+                await connectService.syncAccountStatus(account.id);
                 break;
             }
 

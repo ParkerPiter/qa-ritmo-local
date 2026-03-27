@@ -86,4 +86,33 @@ async function softDeleteUser(req, res) {
     }
 }
 
-module.exports = { createUserAdmin, loginAdminUser, getUsers, updateUserRole, softDeleteUser };
+async function getRoleRequests(req, res) {
+    try {
+        const { estado } = req.query; // opcional: ?estado=pending
+        const solicitudes = await adminService.getRoleRequests(estado || null);
+        handleSuccess(res, { solicitudes });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function resolveRoleRequest(req, res) {
+    try {
+        const { id } = req.params;
+        const { decision } = req.body;
+
+        if (!decision) {
+            return res.status(400).json({ message: "El campo 'decision' es requerido ('approved' | 'rejected')" });
+        }
+
+        const solicitud = await adminService.resolveRoleRequest(id, decision);
+        handleSuccess(res, {
+            message: decision === 'approved' ? 'Solicitud aprobada y rol actualizado' : 'Solicitud rechazada',
+            solicitud
+        });
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+module.exports = { createUserAdmin, loginAdminUser, getUsers, updateUserRole, softDeleteUser, getRoleRequests, resolveRoleRequest };

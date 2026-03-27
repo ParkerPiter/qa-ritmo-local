@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Order, User, Evento, Categoria, Organizador } = require('../schemas');
 
 /**
@@ -21,6 +22,29 @@ const createOrder = async ({ userId, eventoId, cantidad, precioTotal, stripeSess
       const error = new Error('El usuario no existe');
       error.statusCode = 404;
       throw error;
+    }
+
+    // Validar límite de tickets por usuario si el evento lo tiene configurado
+    if (evento.maxTicketsPorUsuario) {
+      const ordenesActivas = await Order.findAll({
+        where: {
+          userId,
+          eventoId,
+          estado: { [Op.in]: ['paid', 'pending'] }
+        },
+        attributes: ['cantidad']
+      });
+      const ticketsYaComprados = ordenesActivas.reduce((sum, o) => sum + o.cantidad, 0);
+      if (ticketsYaComprados + cantidad > evento.maxTicketsPorUsuario) {
+        const disponibles = evento.maxTicketsPorUsuario - ticketsYaComprados;
+        const error = new Error(
+          disponibles > 0
+            ? `Solo puedes comprar ${disponibles} ticket(s) más para este evento (límite: ${evento.maxTicketsPorUsuario} por persona)`
+            : `Ya alcanzaste el límite de ${evento.maxTicketsPorUsuario} ticket(s) por persona para este evento`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
     }
 
     // Crear la orden en estado pending
@@ -447,6 +471,22 @@ const refundOrder = async (orderId, userId = null) => {
   }
 };
 
+/**
+ * Guarda los datos del split de pago (plataforma + partner) en una orden
+ * @param {number} orderId - ID de la orden
+ * @param {Object} splitData - { platformFee, partnerAmount, stripeTransferId }
+ * @returns {Promise<void>}
+ */
+const updateSplitData = async (orderId, { platformFee, partnerAmount, stripeTransferId }) => {
+  try {
+    const order = await Order.findByPk(orderId);
+    if (!order) return;
+    await order.update({ platformFee, partnerAmount, stripeTransferId });
+  } catch (error) {
+    console.error(`Error guardando split data en orden ${orderId}:`, error.message);
+  }
+};
+
 module.exports = {
   createOrder,
   confirmOrder,
@@ -455,5 +495,6 @@ module.exports = {
   getOrderByStripeSessionId,
   getOrderByPaymentIntentId,
   getUserOrders,
-  refundOrder
+  refundOrder,
+  updateSplitData
 };

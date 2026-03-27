@@ -42,6 +42,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: []
     },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: ''
+    },
     rol: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -51,6 +56,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
+    },
+    stripeAccountId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
+    },
+    stripeOnboardingDone: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     },
   });
 
@@ -65,6 +80,12 @@ module.exports = (sequelize, DataTypes) => {
     User.hasMany(models.Order, {
       foreignKey: 'userId',
       as: 'orders'
+    });
+
+    // Relación con solicitudes de cambio de rol
+    User.hasMany(models.SolicitudRol, {
+      foreignKey: 'userId',
+      as: 'solicitudesRol'
     });
   };
 

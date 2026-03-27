@@ -15,10 +15,15 @@ async function createEvento(req, res) {
       throw error;
     }
 
+    // Si el creador tiene rol 'partner', vincularlo como partner del evento
+    // para habilitar el split de pagos de Stripe Connect
+    const partnerUserId = req.user?.role === 'partner' ? req.user.id : null;
+
     const evento = await eventoService.createEvento(organizadorId, {
       titulo, ubicacion, maps, fecha,
       galeriaImagenes, descripcion,
-      useful_information, precio
+      useful_information, precio,
+      partnerUserId
     });
 
     handleSuccess(res, { message: 'Evento creado exitosamente', evento }, 201);

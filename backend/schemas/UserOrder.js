@@ -48,6 +48,21 @@ module.exports = (sequelize, DataTypes) => {
     fechaPago: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    platformFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: null
+    },
+    partnerAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: null
+    },
+    stripeTransferId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
     }
   });
 

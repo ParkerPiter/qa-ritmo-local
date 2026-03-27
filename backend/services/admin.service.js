@@ -1,4 +1,4 @@
-const { Admin, User } = require('../schemas');
+const { Admin, User, SolicitudRol } = require('../schemas');
 const authService = require('./auth.service');
 
 const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist'];
@@ -108,6 +108,65 @@ class AdminService {
     }
 
     await user.update({ isActive: false });
+  }
+
+  /**
+   * Obtiene las solicitudes de cambio de rol
+   * @param {string|null} estado - Filtro opcional: 'pending' | 'approved' | 'rejected'
+   * @returns {Promise<Array>}
+   */
+  async getRoleRequests(estado = null) {
+    const where = estado ? { estado } : {};
+    return SolicitudRol.findAll({
+      where,
+      include: [{
+        model: User,
+        as: 'usuario',
+        attributes: ['id', 'fullName', 'email', 'rol']
+      }],
+      order: [['fechaSolicitud', 'DESC']]
+    });
+  }
+
+  /**
+   * Aprueba o rechaza una solicitud de cambio de rol.
+   * Si se aprueba, actualiza el rol del usuario automáticamente.
+   * @param {number} solicitudId - ID de la solicitud
+   * @param {string} decision - 'approved' | 'rejected'
+   * @returns {Promise<Object>}
+   */
+  async resolveRoleRequest(solicitudId, decision) {
+    if (!['approved', 'rejected'].includes(decision)) {
+      const error = new Error("La decisión debe ser 'approved' o 'rejected'");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const solicitud = await SolicitudRol.findByPk(solicitudId, {
+      include: [{ model: User, as: 'usuario' }]
+    });
+
+    if (!solicitud) {
+      const error = new Error('Solicitud no encontrada');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (solicitud.estado !== 'pending') {
+      const error = new Error(`La solicitud ya fue ${solicitud.estado === 'approved' ? 'aprobada' : 'rechazada'}`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await solicitud.update({ estado: decision });
+
+    if (decision === 'approved') {
+      await solicitud.usuario.update({ rol: solicitud.rolSolicitado });
+    }
+
+    return SolicitudRol.findByPk(solicitudId, {
+      include: [{ model: User, as: 'usuario', attributes: ['id', 'fullName', 'email', 'rol'] }]
+    });
   }
 }
 

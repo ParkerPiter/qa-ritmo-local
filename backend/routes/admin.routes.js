@@ -18,6 +18,10 @@ adminRoutes.delete('/users/:id', adminGuard, adminController.softDeleteUser);
 adminRoutes.put('/users/update', adminGuard, userController.updateUser);
 adminRoutes.get('/users/find', adminGuard, userController.findUserByEmail);
 
+// Solicitudes de cambio de rol
+adminRoutes.get('/role-requests', adminGuard, adminController.getRoleRequests);
+adminRoutes.put('/role-requests/:id', adminGuard, adminController.resolveRoleRequest);
+
 // Rutas de organizadores
 adminRoutes.get('/organizadores', adminGuard, organizadorController.getAllOrganizadores);
 adminRoutes.put('/organizadores/update', adminGuard, organizadorController.updateOrganizador);

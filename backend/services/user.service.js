@@ -1,6 +1,7 @@
-const { User, UserFav, Order, Evento, Categoria, Organizador } = require('../schemas');
+const { User, UserFav, Order, Evento, Categoria, Organizador, SolicitudRol } = require('../schemas');
 const authService = require('./auth.service');
 const orderService = require('./order.service');
+const { sendRoleRequestConfirmation } = require('../mail/mailconfig');
 
 const ROLES_USUARIO = ['client', 'partner', 'artist'];
 
@@ -414,6 +415,61 @@ class UserService {
     }
 
     await user.destroy();
+  }
+
+  /**
+   * Crea una solicitud de cambio de rol y envía confirmación por email
+   * @param {number} userId - ID del usuario
+   * @param {string} userEmail - Email del usuario (del token)
+   * @param {string} rolSolicitado - 'artist' | 'partner'
+   * @returns {Promise<Object>} Solicitud creada
+   */
+  async createRoleRequest(userId, userEmail, rolSolicitado) {
+    const ROLES_PERMITIDOS = ['artist', 'partner'];
+    if (!ROLES_PERMITIDOS.includes(rolSolicitado)) {
+      const error = new Error(`Rol inválido. Solo puedes solicitar: ${ROLES_PERMITIDOS.join(', ')}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const error = new Error('Usuario no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (user.rol !== 'client') {
+      const error = new Error('Solo los usuarios con rol client pueden solicitar un cambio de rol');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Evitar solicitudes duplicadas pendientes
+    const solicitudExistente = await SolicitudRol.findOne({
+      where: { userId, estado: 'pending' }
+    });
+    if (solicitudExistente) {
+      const error = new Error('Ya tienes una solicitud de cambio de rol pendiente');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const solicitud = await SolicitudRol.create({
+      userId,
+      email: userEmail,
+      rolSolicitado,
+      fechaSolicitud: new Date()
+    });
+
+    // Enviar email de confirmación (no bloqueante — si falla no cancela la solicitud)
+    try {
+      await sendRoleRequestConfirmation(userEmail, user.fullName, rolSolicitado, solicitud.fechaSolicitud);
+    } catch (mailError) {
+      console.error('⚠️ No se pudo enviar el email de confirmación de solicitud:', mailError.message);
+    }
+
+    return solicitud;
   }
 
   /**

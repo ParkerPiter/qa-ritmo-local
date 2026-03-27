@@ -72,16 +72,40 @@ class EventoService {
 
   /**
    * Crea un nuevo evento
-   * @param {number} organizadorId - ID del organizador
-   * @param {Object} eventoData - Datos del evento
-   * @returns {Promise<Object>} Evento creado
+   * @param {number|null} organizadorId - ID del organizador (opcional para artists/partners)
+   * @param {Object} eventoData - Datos del evento (puede incluir categoriasIds y partnerUserId)
+   * @returns {Promise<Object>} Evento creado con sus relaciones
    */
   async createEvento(organizadorId, eventoData) {
+    const { categoriasIds, ...camposEvento } = eventoData;
+
     const evento = await Evento.create({
-      ...eventoData,
+      ...camposEvento,
       organizadorId
     });
-    return evento;
+
+    // Vincular categorías si se proporcionaron
+    if (categoriasIds?.length) {
+      const categorias = await Categoria.findAll({ where: { id: categoriasIds } });
+      await evento.addCategorias(categorias);
+    }
+
+    // Devolver evento con sus relaciones
+    return Evento.findByPk(evento.id, {
+      include: [
+        {
+          model: Categoria,
+          as: 'categorias',
+          attributes: ['id', 'nombre', 'tipo'],
+          through: { attributes: [] }
+        },
+        {
+          model: Organizador,
+          as: 'organizador',
+          attributes: ['id', 'nombreCompleto', 'email']
+        }
+      ]
+    });
   }
 
   /**
