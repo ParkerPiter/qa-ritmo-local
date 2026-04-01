@@ -69,6 +69,16 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: null,
       validate: { min: 1 }
     },
+    fechaInicioVenta: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
+    },
+    fechaFinVenta: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
+    },
   });
 
   Evento.associate = (models) => {

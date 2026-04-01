@@ -19,7 +19,10 @@ const eventos = [
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Pop',
-    eventLocation: 'Los Angeles'
+    eventLocation: 'Los Angeles',
+    saleStart: "2026-02-01 00:00:00",
+    saleEnd: "2026-03-15 18:00:00",
+    maxTickets: 4
   },
   {
     title: "Indie Rock Fest",
@@ -28,7 +31,10 @@ const eventos = [
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Indie / Alternative',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-03-01 00:00:00",
+    saleEnd: "2026-04-12 16:00:00",
+    maxTickets: 6
   },
   {
     title: "EDM in the Park",
@@ -37,7 +43,10 @@ const eventos = [
     image: "/public/images/musicImg.png",
     type: 'Free',
     genre: 'EDM (Electronic Dance Music)',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-03-01 00:00:00",
+    saleEnd: "2026-03-21 20:00:00",
+    maxTickets: null
   },
   {
     title: "Band vs Band 2026",
@@ -46,7 +55,10 @@ const eventos = [
     image: "/public/images/card-2.jpg",
     type: 'Free',
     genre: 'Rock',
-    eventLocation: 'Los Angeles'
+    eventLocation: 'Los Angeles',
+    saleStart: "2026-03-01 00:00:00",
+    saleEnd: "2026-03-19 14:00:00",
+    maxTickets: null
   },
   {
     title: "Punk Rock Fest",
@@ -55,7 +67,10 @@ const eventos = [
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Punk',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-03-10 00:00:00",
+    saleEnd: "2026-03-28 16:00:00",
+    maxTickets: 2
   },
   {
     title: "BTS Live Concert",
@@ -64,25 +79,34 @@ const eventos = [
     image: "/public/images/musicImg.png",
     type: 'Paid',
     genre: 'K-Pop',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-03-15 00:00:00",
+    saleEnd: "2026-04-08 20:00:00",
+    maxTickets: 4
   },
-   {
-    title: "Band vs Band ",
+  {
+    title: "Band vs Band",
     date: "2026-04-12 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Rock',
-    eventLocation: 'Los Angeles'
+    eventLocation: 'Los Angeles',
+    saleStart: "2026-03-20 00:00:00",
+    saleEnd: "2026-04-12 14:00:00",
+    maxTickets: null
   },
-   {
-    title: "Pop clasic",
+  {
+    title: "Pop Classic",
     date: "2026-04-05 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/musicImg.png",
     type: 'Paid',
     genre: 'Pop',
-    eventLocation: 'Los Angeles'
+    eventLocation: 'Los Angeles',
+    saleStart: "2026-03-15 00:00:00",
+    saleEnd: "2026-04-05 14:00:00",
+    maxTickets: 6
   },
   {
     title: "90's Rock Punk",
@@ -91,16 +115,22 @@ const eventos = [
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Rock',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-04-01 00:00:00",
+    saleEnd: "2026-05-31 14:00:00",
+    maxTickets: 8
   },
-    {
+  {
     title: "Pop of 20's",
     date: "2026-04-16 16:00:00",
     location: "Staples Center, LA",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Pop',
-    eventLocation: 'San Francisco'
+    eventLocation: 'San Francisco',
+    saleStart: "2026-03-25 00:00:00",
+    saleEnd: "2026-04-16 14:00:00",
+    maxTickets: null
   }
 ];
 
@@ -198,6 +228,9 @@ async function seed() {
             useful_information: usefulInfo,
             organizadorId: Math.random() > 0.5 ? organizador1.id : organizador2.id,
             precio: eventoData.type === 'Free' ? 0 : Math.floor(Math.random() * 100) + 20,
+            fechaInicioVenta: eventoData.saleStart ? new Date(eventoData.saleStart) : null,
+            fechaFinVenta: eventoData.saleEnd ? new Date(eventoData.saleEnd) : null,
+            maxTicketsPorUsuario: eventoData.maxTickets || null,
         });
 
         console.log(`\nAssociating categories for event: ${eventoData.title}`);

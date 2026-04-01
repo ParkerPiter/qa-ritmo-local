@@ -1,13 +1,33 @@
-const { Evento, Categoria, Organizador } = require('../schemas');
+const { Evento, Categoria, Organizador, Sequelize } = require('../schemas');
+const { Op } = Sequelize;
 
 class EventoService {
   /**
-   * Obtiene todos los eventos
-   * @param {Object} filters - Filtros opcionales
-   * @returns {Promise<Array>} Lista de eventos
+   * Obtiene todos los eventos cuya venta está activa al momento de la consulta.
+   * - Si fechaInicioVenta es null → sin restricción de inicio
+   * - Si fechaFinVenta es null → sin restricción de fin
+   * @returns {Promise<Array>} Lista de eventos visibles
    */
-  async getAllEventos(filters = {}) {
+  async getAllEventos() {
+    const now = new Date();
+
     const eventos = await Evento.findAll({
+      where: {
+        [Op.and]: [
+          {
+            [Op.or]: [
+              { fechaInicioVenta: null },
+              { fechaInicioVenta: { [Op.lte]: now } }
+            ]
+          },
+          {
+            [Op.or]: [
+              { fechaFinVenta: null },
+              { fechaFinVenta: { [Op.gte]: now } }
+            ]
+          }
+        ]
+      },
       include: [
         {
           model: Categoria,
@@ -20,8 +40,7 @@ class EventoService {
           as: 'organizador',
           attributes: ['id', 'nombreCompleto', 'email']
         }
-      ],
-      ...(filters.where && { where: filters.where })
+      ]
     });
     return eventos;
   }
