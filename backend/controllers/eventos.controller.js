@@ -100,6 +100,17 @@ const updateEvento = async (req, res) => {
   }
 };
 
+// Mis eventos — eventos subidos por el usuario autenticado
+const getMyEventos = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const eventos = await eventoService.getEventosByUser(userId);
+    handleSuccess(res, { eventos });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 // Eliminar evento — solo admin
 const deleteEvento = async (req, res) => {
   try {
@@ -111,4 +122,4 @@ const deleteEvento = async (req, res) => {
   }
 };
 
-module.exports = { getAllEventos, getEventoById, createEvento, updateEvento, deleteEvento };
+module.exports = { getAllEventos, getEventoById, createEvento, updateEvento, deleteEvento, getMyEventos };

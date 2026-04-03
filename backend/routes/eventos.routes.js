@@ -10,6 +10,13 @@ eventosRouter.get('/', eventosController.getAllEventos);
 eventosRouter.get('/:id', eventosController.getEventoById);
 
 // ============ RUTAS PROTEGIDAS ============
+// Mis eventos — requiere token, cualquier rol
+eventosRouter.get(
+  '/my-events',
+  authenticateToken,
+  eventosController.getMyEventos
+);
+
 // Solo admin, artist y partner pueden crear y editar eventos
 eventosRouter.post(
   '/',

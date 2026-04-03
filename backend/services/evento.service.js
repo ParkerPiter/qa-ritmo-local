@@ -128,6 +128,39 @@ class EventoService {
   }
 
   /**
+   * Obtiene todos los eventos subidos por un usuario (partnerUserId)
+   * @param {number} userId - ID del usuario autenticado
+   * @returns {Promise<Array>} Lista de eventos del usuario
+   */
+  async getEventosByUser(userId) {
+    const eventos = await Evento.findAll({
+      where: { partnerUserId: userId },
+      include: [
+        {
+          model: Categoria,
+          as: 'categorias',
+          attributes: ['id', 'nombre', 'tipo'],
+          through: { attributes: [] }
+        },
+        {
+          model: Organizador,
+          as: 'organizador',
+          attributes: ['id', 'nombreCompleto', 'email']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    if (!eventos.length) {
+      const error = new Error('No tienes eventos creados');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return eventos;
+  }
+
+  /**
    * Actualiza un evento
    * @param {number} eventoId - ID del evento
    * @param {Object} updateData - Datos a actualizar
