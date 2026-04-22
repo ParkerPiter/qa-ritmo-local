@@ -10,6 +10,7 @@ const payments = require('./payments.routes');
 const artist = require('./artist.routes');
 const connect = require('./connect.routes');
 const landingEvents = require('./landingEvent.routes');
+const formRecruitment = require('./formRecruitment.routes');
 
 router.use('/user', user);
 router.use('/organizador', organizador);
@@ -20,5 +21,6 @@ router.use('/payments', payments);
 router.use('/artist', artist);
 router.use('/connect', connect);
 router.use('/landing-events', landingEvents);
+router.use('/recruitment', formRecruitment);
 
 module.exports = router;
