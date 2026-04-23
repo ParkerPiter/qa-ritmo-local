@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     city: {
-      type: DataTypes.ENUM('sf', 'la'),
+      type: DataTypes.STRING(10),
       allowNull: false
     },
     phone: {
