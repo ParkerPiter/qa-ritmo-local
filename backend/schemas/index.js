@@ -20,6 +20,7 @@ const UserFav = require('./UserFav')(sequelize, Sequelize.DataTypes);
 const Order = require('./UserOrder')(sequelize, Sequelize.DataTypes);
 const SolicitudRol = require('./SolicitudRol')(sequelize, Sequelize.DataTypes);
 const LandingEvent = require('./LandingEvent')(sequelize, Sequelize.DataTypes);
+const FormRecruitment = require('./FormRecruitment')(sequelize, Sequelize.DataTypes);
 
 const db = {
   sequelize,
@@ -34,7 +35,8 @@ const db = {
   UserFav,
   Order,
   SolicitudRol,
-  LandingEvent
+  LandingEvent,
+  FormRecruitment
 };
 
 // Configurar asociaciones entre modelos
