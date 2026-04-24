@@ -36,7 +36,7 @@ const createEvento = async (req, res) => {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
       useful_information, organizadorId,
-      categoriasIds, maxTicketsPorUsuario,
+      category, categoriasIds, maxTicketsPorUsuario,
       fechaInicioVenta, fechaFinVenta
     } = req.body;
 
@@ -53,6 +53,7 @@ const createEvento = async (req, res) => {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
       useful_information,
+      category: category || null,
       partnerUserId,
       categoriasIds,
       maxTicketsPorUsuario: maxTicketsPorUsuario || null,
