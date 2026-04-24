@@ -103,9 +103,9 @@ class EventoService {
       organizadorId
     });
 
-    // Vincular categorías si se proporcionaron
+    // Vincular categorías si se proporcionaron (por nombre)
     if (categoriasIds?.length) {
-      const categorias = await Categoria.findAll({ where: { id: categoriasIds } });
+      const categorias = await Categoria.findAll({ where: { nombre: categoriasIds } });
       await evento.addCategorias(categorias);
     }
 
@@ -167,15 +167,24 @@ class EventoService {
    * @returns {Promise<void>}
    */
   async updateEvento(eventoId, updateData) {
+    const { categoriasIds, ...camposEvento } = updateData;
+
     const evento = await Evento.findByPk(eventoId);
-    
+
     if (!evento) {
       const error = new Error('Evento no encontrado');
       error.statusCode = 404;
       throw error;
     }
 
-    await evento.update(updateData);
+    if (Object.keys(camposEvento).length) {
+      await evento.update(camposEvento);
+    }
+
+    if (categoriasIds !== undefined) {
+      const categorias = await Categoria.findAll({ where: { nombre: categoriasIds } });
+      await evento.setCategorias(categorias);
+    }
   }
 
   /**

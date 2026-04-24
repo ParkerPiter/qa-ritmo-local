@@ -75,7 +75,7 @@ const updateEvento = async (req, res) => {
       'titulo', 'descripcion', 'fecha', 'precio',
       'ubicacion', 'maps', 'galeriaImagenes',
       'useful_information', 'maxTicketsPorUsuario',
-      'fechaInicioVenta', 'fechaFinVenta'
+      'fechaInicioVenta', 'fechaFinVenta', 'categoriasIds'
     ];
 
     const updateData = {};

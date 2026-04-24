@@ -12,6 +12,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    category: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
+    },
     fecha: {
       type: DataTypes.DATE,
       allowNull: false
