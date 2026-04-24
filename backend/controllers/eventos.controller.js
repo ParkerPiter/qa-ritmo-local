@@ -36,8 +36,9 @@ const createEvento = async (req, res) => {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
       useful_information, organizadorId,
-      category, categoriasIds, maxTicketsPorUsuario,
-      fechaInicioVenta, fechaFinVenta
+      categoriasIds, maxTicketsPorUsuario,
+      fechaInicioVenta, fechaFinVenta,
+      category
     } = req.body;
 
     if (!titulo || !descripcion || !fecha || precio === undefined || !galeriaImagenes) {
@@ -53,9 +54,9 @@ const createEvento = async (req, res) => {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
       useful_information,
-      category: category || null,
       partnerUserId,
       categoriasIds,
+      category: category || null,
       maxTicketsPorUsuario: maxTicketsPorUsuario || null,
       fechaInicioVenta: fechaInicioVenta || null,
       fechaFinVenta: fechaFinVenta || null
@@ -76,7 +77,7 @@ const updateEvento = async (req, res) => {
       'titulo', 'descripcion', 'fecha', 'precio',
       'ubicacion', 'maps', 'galeriaImagenes',
       'useful_information', 'maxTicketsPorUsuario',
-      'fechaInicioVenta', 'fechaFinVenta', 'categoriasIds'
+      'fechaInicioVenta', 'fechaFinVenta', 'categoriasIds', 'category'
     ];
 
     const updateData = {};
