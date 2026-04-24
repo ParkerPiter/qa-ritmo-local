@@ -2,6 +2,12 @@ const bcrypt = require('bcryptjs');
 const { sequelize, Evento, Organizador, Categoria, Admin, User } = require('../schemas');
 
 const tipos = ['Paid', 'Free'];
+const eventCategories = [
+  'Live Music', 'DJ Night', 'Comedy', 'Theater', 'Dance',
+  'Workshop / Class', 'Art / Exhibition', 'Film Screening',
+  'Party / Nightlife', 'Festival', 'Street Fair', 'Fundraiser',
+  'Market / Pop-Up', 'Other'
+];
 const generos = [
   'Rock', 'Pop', 'Hip-Hop / Rap', 'R&B / Soul', 'Country', 'EDM (Electronic Dance Music)',
   'Latin (Reggaeton, Latin Pop, Regional Mexican, etc.)', 'Indie / Alternative', 'Metal / Hard Rock',
@@ -22,7 +28,8 @@ const eventos = [
     eventLocation: 'Los Angeles',
     saleStart: "2026-02-01 00:00:00",
     saleEnd: "2026-03-15 18:00:00",
-    maxTickets: 4
+    maxTickets: 4,
+    categoria: 'Live Music'
   },
   {
     title: "Indie Rock Fest",
@@ -34,7 +41,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-03-01 00:00:00",
     saleEnd: "2026-04-12 16:00:00",
-    maxTickets: 6
+    maxTickets: 6,
+    categoria: 'Festival'
   },
   {
     title: "EDM in the Park",
@@ -46,7 +54,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-03-01 00:00:00",
     saleEnd: "2026-03-21 20:00:00",
-    maxTickets: null
+    maxTickets: null,
+    categoria: 'Party / Nightlife'
   },
   {
     title: "Band vs Band 2026",
@@ -58,7 +67,8 @@ const eventos = [
     eventLocation: 'Los Angeles',
     saleStart: "2026-03-01 00:00:00",
     saleEnd: "2026-03-19 14:00:00",
-    maxTickets: null
+    maxTickets: null,
+    categoria: 'Live Music'
   },
   {
     title: "Punk Rock Fest",
@@ -70,7 +80,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-03-10 00:00:00",
     saleEnd: "2026-03-28 16:00:00",
-    maxTickets: 2
+    maxTickets: 2,
+    categoria: 'Festival'
   },
   {
     title: "BTS Live Concert",
@@ -82,7 +93,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-03-15 00:00:00",
     saleEnd: "2026-04-08 20:00:00",
-    maxTickets: 4
+    maxTickets: 4,
+    categoria: 'Live Music'
   },
   {
     title: "Band vs Band",
@@ -94,7 +106,8 @@ const eventos = [
     eventLocation: 'Los Angeles',
     saleStart: "2026-03-20 00:00:00",
     saleEnd: "2026-04-12 14:00:00",
-    maxTickets: null
+    maxTickets: null,
+    categoria: 'Live Music'
   },
   {
     title: "Pop Classic",
@@ -106,7 +119,8 @@ const eventos = [
     eventLocation: 'Los Angeles',
     saleStart: "2026-03-15 00:00:00",
     saleEnd: "2026-04-05 14:00:00",
-    maxTickets: 6
+    maxTickets: 6,
+    categoria: 'Live Music'
   },
   {
     title: "90's Rock Punk",
@@ -118,7 +132,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-04-01 00:00:00",
     saleEnd: "2026-05-31 14:00:00",
-    maxTickets: 8
+    maxTickets: 8,
+    categoria: 'Live Music'
   },
   {
     title: "Pop of 20's",
@@ -130,7 +145,8 @@ const eventos = [
     eventLocation: 'San Francisco',
     saleStart: "2026-03-25 00:00:00",
     saleEnd: "2026-04-16 14:00:00",
-    maxTickets: null
+    maxTickets: null,
+    categoria: 'Party / Nightlife'
   }
 ];
 
@@ -194,6 +210,10 @@ async function seed() {
       const cat = await Categoria.create({ nombre, tipo: 'LOCATION' });
       categoriasCreadas[nombre] = cat;
     }
+    for (const nombre of eventCategories) {
+      const cat = await Categoria.create({ nombre, tipo: 'TYPE' });
+      categoriasCreadas[nombre] = cat;
+    }
 
     console.log('Categories seeded!');
 
@@ -239,7 +259,8 @@ async function seed() {
         const categoriasParaAsociar = [
             eventoData.type,
             eventoData.genre,
-            eventoData.eventLocation
+            eventoData.eventLocation,
+            eventoData.categoria
         ];
 
         for (const nombreCategoria of categoriasParaAsociar) {
