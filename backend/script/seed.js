@@ -1,5 +1,52 @@
 const bcrypt = require('bcryptjs');
+const path = require('path');
+const cloudinary = require('cloudinary').v2;
 const { sequelize, Evento, Organizador, Categoria, Admin, User } = require('../schemas');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+/**
+ * Precarga las imágenes locales del seed a Cloudinary.
+ * Sube cada imagen única una sola vez con un public_id fijo y overwrite:true
+ * (idempotente: re-ejecutar el seed no genera duplicados).
+ *
+ * @returns {Promise<Map<string, {url: string, publicId: string}>|null>}
+ *   Mapa rutaLocal -> { url, publicId }. Devuelve null si Cloudinary no está
+ *   configurado o si falla la subida (el seed cae a rutas locales).
+ */
+async function uploadSeedImagesToCloudinary(localImagePaths) {
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn('⚠️  Cloudinary no configurado. El seed usará rutas locales para las imágenes.');
+    return null;
+  }
+
+  const uniquePaths = [...new Set(localImagePaths)];
+  const map = new Map();
+
+  try {
+    for (const relPath of uniquePaths) {
+      // relPath viene como "/public/images/card-2.jpg" → archivo en backend/public/images/...
+      const absPath = path.join(__dirname, '..', relPath.replace(/^\//, ''));
+      const baseName = path.parse(relPath).name; // "card-2"
+      const result = await cloudinary.uploader.upload(absPath, {
+        public_id: `seed/${baseName}`,
+        folder: 'eventos',
+        overwrite: true,
+        invalidate: true,
+      });
+      map.set(relPath, { url: result.secure_url, publicId: result.public_id });
+      console.log(`☁️  Imagen precargada en Cloudinary: ${relPath} → ${result.secure_url}`);
+    }
+    return map;
+  } catch (error) {
+    console.error('⚠️  Error subiendo imágenes a Cloudinary. Fallback a rutas locales:', error.message);
+    return null;
+  }
+}
 
 const tipos = ['Paid', 'Free'];
 const eventCategories = [
@@ -155,6 +202,10 @@ async function seed() {
     await sequelize.sync({ force: true });
     console.log('Database synced!');
 
+    // Precargar imágenes del seed a Cloudinary (CDN + optimización).
+    // Si no está configurado, imageMap = null y se usan las rutas locales.
+    const imageMap = await uploadSeedImagesToCloudinary(eventos.map(e => e.image));
+
     // Crear Admin
     await Admin.create({
       email: 'silverglidertickets@gmail.com',
@@ -238,12 +289,18 @@ async function seed() {
           'Golden Gate Park, SF': 'https://maps.google.com/?q=Golden+Gate+Park+San+Francisco'
         };
 
+        // Resolver imagen: Cloudinary si se precargó, sino ruta local (fallback)
+        const cloudImg = imageMap?.get(eventoData.image);
+        const galeriaImagenes = [cloudImg ? cloudImg.url : eventoData.image];
+        const galeriaPublicIds = cloudImg ? [cloudImg.publicId] : [];
+
         const newEvento = await Evento.create({
             titulo: eventoData.title,
             ubicacion: eventoData.location,
             maps: mapsByLocation[eventoData.location] || `https://maps.google.com/?q=${encodeURIComponent(eventoData.location)}`,
             fecha: new Date(eventoData.date),
-            galeriaImagenes: [eventoData.image],
+            galeriaImagenes,
+            galeriaPublicIds,
             descripcion: lorem,
             useful_information: usefulInfo,
             organizadorId: Math.random() > 0.5 ? organizador1.id : organizador2.id,
