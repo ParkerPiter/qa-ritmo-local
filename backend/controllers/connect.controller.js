@@ -42,4 +42,18 @@ const getStatus = async (req, res) => {
   }
 };
 
-module.exports = { startOnboarding, verifyOnboarding, getStatus };
+const getPayouts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const data = await connectService.getPayouts(userId);
+    res.status(200).json({ success: true, ...data });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Error al obtener el historial de pagos del partner'
+    });
+  }
+};
+
+module.exports = { startOnboarding, verifyOnboarding, getStatus, getPayouts };

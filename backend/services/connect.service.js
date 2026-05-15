@@ -3,7 +3,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
-const { User } = require('../schemas');
+const { Op } = require('sequelize');
+const { User, Order, Evento } = require('../schemas');
 
 class ConnectService {
   /**
@@ -112,6 +113,91 @@ class ConnectService {
       stripeAccountId: user.stripeAccountId,
       stripeOnboardingDone: user.stripeOnboardingDone,
       isReady: !!user.stripeAccountId && user.stripeOnboardingDone
+    };
+  }
+
+  /**
+   * Devuelve el historial de splits del partner: órdenes de eventos de su propiedad
+   * con datos de comisión, monto recibido y estado.
+   * @param {number} userId - ID del partner
+   * @returns {Promise<{ totals: Object, payouts: Array }>}
+   */
+  async getPayouts(userId) {
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'rol', 'stripeAccountId', 'stripeOnboardingDone']
+    });
+
+    if (!user) {
+      const error = new Error('Usuario no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (user.rol !== 'partner') {
+      const error = new Error('Solo los usuarios con rol partner pueden consultar sus pagos');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const orders = await Order.findAll({
+      where: {
+        partnerAmount: { [Op.ne]: null },
+        estado: { [Op.in]: ['paid', 'refunded'] }
+      },
+      include: [{
+        model: Evento,
+        as: 'evento',
+        where: { partnerUserId: userId },
+        attributes: ['id', 'titulo', 'fecha']
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    const totals = orders.reduce((acc, o) => {
+      const partner = parseFloat(o.partnerAmount) || 0;
+      const fee = parseFloat(o.platformFee) || 0;
+      if (o.estado === 'paid') {
+        acc.totalGanado += partner;
+        acc.totalComisionPlataforma += fee;
+        acc.ventasContadas += 1;
+      } else if (o.estado === 'refunded') {
+        acc.totalReembolsado += partner;
+        acc.reembolsosContados += 1;
+      }
+      return acc;
+    }, {
+      totalGanado: 0,
+      totalComisionPlataforma: 0,
+      totalReembolsado: 0,
+      ventasContadas: 0,
+      reembolsosContados: 0
+    });
+
+    return {
+      stripeAccountId: user.stripeAccountId,
+      stripeOnboardingDone: user.stripeOnboardingDone,
+      totals: {
+        totalGanado: totals.totalGanado.toFixed(2),
+        totalComisionPlataforma: totals.totalComisionPlataforma.toFixed(2),
+        totalReembolsado: totals.totalReembolsado.toFixed(2),
+        netoActual: (totals.totalGanado - totals.totalReembolsado).toFixed(2),
+        ventasContadas: totals.ventasContadas,
+        reembolsosContados: totals.reembolsosContados
+      },
+      payouts: orders.map(o => ({
+        orderId: o.id,
+        eventoId: o.evento?.id,
+        eventoTitulo: o.evento?.titulo,
+        fechaEvento: o.evento?.fecha,
+        cantidad: o.cantidad,
+        precioTotal: o.precioTotal,
+        platformFee: o.platformFee,
+        partnerAmount: o.partnerAmount,
+        stripeTransferId: o.stripeTransferId,
+        estado: o.estado,
+        fechaPago: o.fechaPago,
+        createdAt: o.createdAt
+      }))
     };
   }
 

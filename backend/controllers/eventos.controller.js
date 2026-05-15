@@ -35,6 +35,7 @@ const createEvento = async (req, res) => {
     const {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
+      galeriaPublicIds,
       useful_information, organizadorId,
       categoriasIds, maxTicketsPorUsuario,
       fechaInicioVenta, fechaFinVenta,
@@ -53,6 +54,7 @@ const createEvento = async (req, res) => {
     const evento = await eventoService.createEvento(organizadorId || null, {
       titulo, descripcion, fecha, precio,
       ubicacion, maps, galeriaImagenes,
+      galeriaPublicIds: galeriaPublicIds || [],
       useful_information,
       partnerUserId,
       categoriasIds,
@@ -75,7 +77,7 @@ const updateEvento = async (req, res) => {
 
     const camposPermitidos = [
       'titulo', 'descripcion', 'fecha', 'precio',
-      'ubicacion', 'maps', 'galeriaImagenes',
+      'ubicacion', 'maps', 'galeriaImagenes', 'galeriaPublicIds',
       'useful_information', 'maxTicketsPorUsuario',
       'fechaInicioVenta', 'fechaFinVenta', 'categoriasIds', 'category'
     ];

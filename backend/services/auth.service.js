@@ -13,7 +13,7 @@ class AuthService {
     return jwt.sign(
       { ...payload, role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '7h' }
     );
   }
 

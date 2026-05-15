@@ -1,5 +1,8 @@
-const { Admin, User, SolicitudRol } = require('../schemas');
+const { Op } = require('sequelize');
+const { Admin, User, SolicitudRol, Order, Evento } = require('../schemas');
 const authService = require('./auth.service');
+
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
 const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist'];
 
@@ -167,6 +170,155 @@ class AdminService {
     return SolicitudRol.findByPk(solicitudId, {
       include: [{ model: User, as: 'usuario', attributes: ['id', 'fullName', 'email', 'rol'] }]
     });
+  }
+
+  /**
+   * Lista todas las órdenes reembolsadas con paginación y filtros opcionales.
+   * @param {Object} options
+   * @param {number} options.page - Página (1-indexada)
+   * @param {number} options.pageSize - Items por página
+   * @param {string} options.from - Fecha desde (ISO) - filtra por fechaPago
+   * @param {string} options.to - Fecha hasta (ISO) - filtra por fechaPago
+   * @param {number} options.eventoId - Filtrar por evento
+   * @returns {Promise<{ total: number, page: number, pageSize: number, refunds: Array }>}
+   */
+  async getRefundedOrders({ page = 1, pageSize = 20, from = null, to = null, eventoId = null } = {}) {
+    const where = { estado: 'refunded' };
+    if (from || to) {
+      where.fechaPago = {};
+      if (from) where.fechaPago[Op.gte] = new Date(from);
+      if (to) where.fechaPago[Op.lte] = new Date(to);
+    }
+    if (eventoId) where.eventoId = eventoId;
+
+    const offset = (Math.max(1, page) - 1) * pageSize;
+
+    const { rows, count } = await Order.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Evento,
+          as: 'evento',
+          attributes: ['id', 'titulo', 'fecha', 'partnerUserId'],
+          include: [{ model: User, as: 'partner', attributes: ['id', 'fullName', 'email'] }]
+        },
+        { model: User, as: 'user', attributes: ['id', 'fullName', 'email'] }
+      ],
+      order: [['updatedAt', 'DESC']],
+      limit: pageSize,
+      offset
+    });
+
+    return {
+      total: count,
+      page: Number(page),
+      pageSize: Number(pageSize),
+      refunds: rows.map(o => ({
+        orderId: o.id,
+        estado: o.estado,
+        precioTotal: o.precioTotal,
+        platformFee: o.platformFee,
+        partnerAmount: o.partnerAmount,
+        stripePaymentIntentId: o.stripePaymentIntentId,
+        stripeTransferId: o.stripeTransferId,
+        cantidad: o.cantidad,
+        fechaPago: o.fechaPago,
+        updatedAt: o.updatedAt,
+        cliente: o.user ? { id: o.user.id, fullName: o.user.fullName, email: o.user.email } : null,
+        evento: o.evento ? {
+          id: o.evento.id,
+          titulo: o.evento.titulo,
+          fecha: o.evento.fecha,
+          partner: o.evento.partner
+            ? { id: o.evento.partner.id, fullName: o.evento.partner.fullName, email: o.evento.partner.email }
+            : null
+        } : null
+      }))
+    };
+  }
+
+  /**
+   * Devuelve el detalle de una orden reembolsada por su ID interno.
+   * @param {number} orderId
+   * @returns {Promise<Object>}
+   */
+  async getRefundedOrderById(orderId) {
+    const order = await Order.findOne({
+      where: { id: orderId, estado: 'refunded' },
+      include: [
+        {
+          model: Evento,
+          as: 'evento',
+          include: [{ model: User, as: 'partner', attributes: ['id', 'fullName', 'email', 'stripeAccountId'] }]
+        },
+        { model: User, as: 'user', attributes: ['id', 'fullName', 'email'] }
+      ]
+    });
+
+    if (!order) {
+      const error = new Error('Reembolso no encontrado');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Si tenemos Stripe configurado y un payment intent, recuperamos info de Stripe
+    let stripeRefundInfo = null;
+    if (stripe && order.stripePaymentIntentId) {
+      try {
+        const refunds = await stripe.refunds.list({
+          payment_intent: order.stripePaymentIntentId,
+          limit: 10
+        });
+        stripeRefundInfo = refunds.data.map(r => ({
+          id: r.id,
+          amount: (r.amount / 100).toFixed(2),
+          currency: r.currency,
+          status: r.status,
+          reason: r.reason,
+          created: r.created
+        }));
+      } catch (err) {
+        console.warn(`No se pudo recuperar info de refunds desde Stripe: ${err.message}`);
+      }
+    }
+
+    return { order, stripeRefundInfo };
+  }
+
+  /**
+   * Lista las disputas activas desde Stripe.
+   * @param {Object} options
+   * @param {number} options.limit - Cantidad de resultados (1-100)
+   * @param {string} options.starting_after - Cursor para paginación
+   * @returns {Promise<Object>}
+   */
+  async getDisputesFromStripe({ limit = 25, starting_after = null } = {}) {
+    if (!stripe) {
+      const error = new Error('Servicio de Stripe no configurado');
+      error.statusCode = 503;
+      throw error;
+    }
+
+    const params = { limit: Math.min(Math.max(1, limit), 100) };
+    if (starting_after) params.starting_after = starting_after;
+
+    const result = await stripe.disputes.list(params);
+
+    return {
+      hasMore: result.has_more,
+      disputes: result.data.map(d => ({
+        id: d.id,
+        amount: (d.amount / 100).toFixed(2),
+        currency: d.currency,
+        reason: d.reason,
+        status: d.status,
+        chargeId: d.charge,
+        paymentIntentId: d.payment_intent,
+        evidenceDueBy: d.evidence_details?.due_by,
+        hasEvidence: d.evidence_details?.has_evidence ?? false,
+        created: d.created
+      }))
+    };
   }
 }
 

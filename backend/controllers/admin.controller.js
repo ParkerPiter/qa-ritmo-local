@@ -115,4 +115,54 @@ async function resolveRoleRequest(req, res) {
     }
 }
 
-module.exports = { createUserAdmin, loginAdminUser, getUsers, updateUserRole, softDeleteUser, getRoleRequests, resolveRoleRequest };
+async function getRefunds(req, res) {
+    try {
+        const { page = 1, pageSize = 20, from = null, to = null, eventoId = null } = req.query;
+        const data = await adminService.getRefundedOrders({
+            page: parseInt(page, 10) || 1,
+            pageSize: Math.min(parseInt(pageSize, 10) || 20, 100),
+            from,
+            to,
+            eventoId: eventoId ? parseInt(eventoId, 10) : null
+        });
+        handleSuccess(res, data);
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function getRefundDetail(req, res) {
+    try {
+        const { id } = req.params;
+        const data = await adminService.getRefundedOrderById(parseInt(id, 10));
+        handleSuccess(res, data);
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+async function getDisputes(req, res) {
+    try {
+        const { limit = 25, starting_after = null } = req.query;
+        const data = await adminService.getDisputesFromStripe({
+            limit: parseInt(limit, 10) || 25,
+            starting_after
+        });
+        handleSuccess(res, data);
+    } catch (error) {
+        handleError(res, error);
+    }
+}
+
+module.exports = {
+    createUserAdmin,
+    loginAdminUser,
+    getUsers,
+    updateUserRole,
+    softDeleteUser,
+    getRoleRequests,
+    resolveRoleRequest,
+    getRefunds,
+    getRefundDetail,
+    getDisputes
+};

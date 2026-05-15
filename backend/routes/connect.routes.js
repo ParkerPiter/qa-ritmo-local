@@ -2,6 +2,7 @@ const express = require('express');
 const connectRoutes = express.Router();
 const connectController = require('../controllers/connect.controller');
 const authenticateToken = require('../middleware/auth.Middleware');
+const requireRoles = require('../middleware/requireRoles');
 
 // Iniciar onboarding: crea o reanuda la cuenta Express del partner en Stripe
 connectRoutes.post('/onboarding', authenticateToken, connectController.startOnboarding);
@@ -11,5 +12,8 @@ connectRoutes.get('/onboarding/return', authenticateToken, connectController.ver
 
 // Estado actual de la cuenta Connect del partner
 connectRoutes.get('/status', authenticateToken, connectController.getStatus);
+
+// Historial de pagos/splits recibidos por el partner
+connectRoutes.get('/payouts', authenticateToken, requireRoles(['partner']), connectController.getPayouts);
 
 module.exports = connectRoutes;

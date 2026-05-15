@@ -82,6 +82,7 @@ class EventoService {
       maps: evento.maps,
       ubicacion: evento.ubicacion,
       galeriaImagenes: evento.galeriaImagenes,
+      galeriaPublicIds: evento.galeriaPublicIds,
       fecha: evento.fecha,
       precio: evento.precio,
       organizador: evento.organizador,

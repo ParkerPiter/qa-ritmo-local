@@ -25,6 +25,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ARRAY(DataTypes.TEXT),
       allowNull: false
     },
+    galeriaPublicIds: {
+      type: DataTypes.ARRAY(DataTypes.TEXT),
+      allowNull: true,
+      defaultValue: [],
+    },
     useful_information: {
       type: DataTypes.JSONB,
       allowNull: false,

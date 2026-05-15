@@ -147,9 +147,56 @@ async function sendRoleRequestConfirmation(to, fullName, rolSolicitado, fechaSol
   return data;
 }
 
+/**
+ * Notifica al administrador cuando se crea una disputa en Stripe.
+ * @param {Object} dispute - Datos de la disputa
+ * @param {string} dispute.id - ID de la disputa en Stripe
+ * @param {number} dispute.amount - Monto disputado (en centavos)
+ * @param {string} dispute.currency - Moneda
+ * @param {string} dispute.reason - Razón de la disputa
+ * @param {number} dispute.evidenceDueBy - Plazo para responder (timestamp Unix)
+ * @param {string} dispute.chargeId - ID del cargo disputado
+ * @param {string|number|null} dispute.orderId - ID interno de la orden (si se pudo localizar)
+ * @returns {Promise}
+ */
+async function sendDisputeNotification(dispute) {
+  const monto = (dispute.amount / 100).toFixed(2);
+  const plazo = dispute.evidenceDueBy
+    ? new Date(dispute.evidenceDueBy * 1000).toLocaleString('es-ES', {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    : 'No especificado';
+
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_ADMIN,
+    to: [process.env.EMAIL_ADMIN],
+    subject: `⚠️ Nueva disputa en Stripe: ${dispute.id}`,
+    html: `
+      <h2>⚠️ Nueva disputa recibida</h2>
+      <p>Se ha creado una nueva disputa en Stripe que requiere tu atención.</p>
+      <table style="border-collapse: collapse; margin: 16px 0;">
+        <tr><td style="padding: 6px 12px;"><strong>Dispute ID:</strong></td><td style="padding: 6px 12px;">${dispute.id}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Charge ID:</strong></td><td style="padding: 6px 12px;">${dispute.chargeId || '—'}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Orden interna:</strong></td><td style="padding: 6px 12px;">${dispute.orderId ?? 'No localizada'}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Monto:</strong></td><td style="padding: 6px 12px;">${monto} ${(dispute.currency || '').toUpperCase()}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Razón:</strong></td><td style="padding: 6px 12px;">${dispute.reason || '—'}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Plazo para responder:</strong></td><td style="padding: 6px 12px;">${plazo}</td></tr>
+      </table>
+      <p>Revisá la disputa en el <a href="https://dashboard.stripe.com/disputes/${dispute.id}">Dashboard de Stripe</a>.</p>
+    `
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 module.exports = {
   generate4DigitToken,
   sendLoginToken,
   sendContactEmail,
   sendRoleRequestConfirmation,
+  sendDisputeNotification,
 };

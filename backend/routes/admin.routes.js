@@ -28,4 +28,12 @@ adminRoutes.put('/organizadores/update', adminGuard, organizadorController.updat
 adminRoutes.delete('/organizadores/delete', adminGuard, organizadorController.deleteOrganizador);
 adminRoutes.get('/organizadores/find', adminGuard, organizadorController.findOrganizadorByEmail);
 
+// Reembolsos: lista y detalle de órdenes reembolsadas
+// Query params soportados en GET /refunds: page, pageSize, from, to, eventoId
+adminRoutes.get('/refunds', adminGuard, adminController.getRefunds);
+adminRoutes.get('/refunds/:id', adminGuard, adminController.getRefundDetail);
+
+// Disputas: lista desde Stripe (query params: limit, starting_after)
+adminRoutes.get('/disputes', adminGuard, adminController.getDisputes);
+
 module.exports = adminRoutes;

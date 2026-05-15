@@ -104,10 +104,18 @@ const createOrder = async ({ userId, eventoId, cantidad, precioTotal, stripeSess
  */
 const confirmOrder = async (stripeSessionId, paymentIntentId = null) => {
   try {
-    // Buscar la orden por el stripePaymentIntentId (puede ser session o payment_intent)
-    const order = await Order.findOne({
-      where: { stripePaymentIntentId: stripeSessionId }
-    });
+    // Buscar la orden por session ID o payment intent ID (el webhook puede haber llegado primero
+    // y el campo ya podría contener el payment_intent_id)
+    const whereClause = stripeSessionId
+      ? {
+          [Op.or]: [
+            { stripePaymentIntentId: stripeSessionId },
+            ...(paymentIntentId ? [{ stripePaymentIntentId: paymentIntentId }] : [])
+          ]
+        }
+      : { stripePaymentIntentId: paymentIntentId };
+
+    const order = await Order.findOne({ where: whereClause });
 
     if (!order) {
       const error = new Error('Don\'t found the order associated with the payment');
@@ -125,12 +133,7 @@ const confirmOrder = async (stripeSessionId, paymentIntentId = null) => {
     // Actualizar la orden a "paid" y establecer la fecha de pago
     order.estado = 'paid';
     order.fechaPago = new Date();
-    
-    // Si se proporcionó un paymentIntentId diferente, actualizarlo
-    if (paymentIntentId && paymentIntentId !== stripeSessionId) {
-      order.stripePaymentIntentId = paymentIntentId;
-    }
-    
+
     await order.save();
 
     console.log(`✅ Orden ${order.id} confirmed as paid`);

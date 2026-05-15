@@ -5,6 +5,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
+const { sendDisputeNotification } = require('../mail/mailconfig');
 const { Evento, User } = require('../schemas');
 
 const PLATFORM_FEE_PERCENT = 0.05; // 5% para la plataforma
@@ -368,11 +369,27 @@ const handleWebhook = async (req, res) => {
                 const charge = event.data.object;
                 console.log(`💰 Refund processed: ${charge.id}`);
 
-                // Update order
                 const order = await orderService.getOrderByPaymentIntentId(charge.payment_intent);
                 if (order && order.estado === 'paid') {
                     await orderService.refundOrder(order.id);
                     console.log(`💰 Order ${order.id} marked as refunded`);
+
+                    // Revertir la transferencia al partner para clawback del 95%
+                    if (order.stripeTransferId && order.partnerAmount && stripe) {
+                        try {
+                            const reversalAmount = Math.round(parseFloat(order.partnerAmount) * 100);
+                            const reversal = await stripe.transfers.createReversal(order.stripeTransferId, {
+                                amount: reversalAmount,
+                                description: `Reversal for refunded order ${order.id}`,
+                                metadata: { orderId: order.id.toString() }
+                            });
+                            console.log(`↩️  Transfer reversal creada: ${reversal.id} (${reversalAmount} centavos)`);
+                        } catch (reversalError) {
+                            console.error(`⚠️  Error revirtiendo transfer de orden ${order.id}:`, reversalError.message);
+                            // No re-lanzamos: la orden ya está marcada como refunded.
+                            // La reversión fallida queda en logs para que el admin actúe manualmente.
+                        }
+                    }
                 }
                 break;
             }
@@ -381,7 +398,29 @@ const handleWebhook = async (req, res) => {
             case 'charge.dispute.created': {
                 const dispute = event.data.object;
                 console.log(`⚠️ Dispute created: ${dispute.id}`);
-                // TODO: Notify administrator
+
+                let orderId = null;
+                try {
+                    const order = await orderService.getOrderByPaymentIntentId(dispute.payment_intent);
+                    orderId = order?.id ?? null;
+                } catch (lookupErr) {
+                    console.error('No se pudo localizar la orden de la disputa:', lookupErr.message);
+                }
+
+                try {
+                    await sendDisputeNotification({
+                        id: dispute.id,
+                        amount: dispute.amount,
+                        currency: dispute.currency,
+                        reason: dispute.reason,
+                        evidenceDueBy: dispute.evidence_details?.due_by,
+                        chargeId: dispute.charge,
+                        orderId
+                    });
+                    console.log(`📧 Notificación de disputa enviada al admin`);
+                } catch (mailErr) {
+                    console.error('⚠️  Error enviando email de disputa:', mailErr.message);
+                }
                 break;
             }
 
