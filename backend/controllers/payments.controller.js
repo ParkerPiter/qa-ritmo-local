@@ -317,7 +317,7 @@ const handleWebhook = async (req, res) => {
             // 🔄 CUENTA CONNECT ACTUALIZADA
             case 'account.updated': {
                 const account = event.data.object;
-                console.log(`🔄 Cuenta Connect actualizada: ${account.id}`);
+                console.log(`🔄 Account Connect Refreshed: ${account.id}`);
                 await connectService.syncAccountStatus(account.id);
                 break;
             }
