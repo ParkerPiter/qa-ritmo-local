@@ -139,6 +139,23 @@ class ConnectService {
       throw error;
     }
 
+    // Auto-sincronización: si la BD dice "pendiente" pero el partner ya tiene
+    // cuenta en Stripe, re-consultamos el estado real. Así el dashboard se
+    // corrige solo aunque no haya vuelto por la página de retorno ni haya
+    // webhook. Una vez en true, esta rama no se vuelve a ejecutar.
+    if (stripe && user.stripeAccountId && !user.stripeOnboardingDone) {
+      try {
+        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+        const onboardingDone = account.details_submitted && account.charges_enabled;
+        if (onboardingDone) {
+          await user.update({ stripeOnboardingDone: true });
+          console.log(`🔄 Connect ${user.stripeAccountId} re-sincronizado desde getPayouts → onboardingDone: true`);
+        }
+      } catch (err) {
+        console.error('⚠️  No se pudo re-sincronizar el estado Connect:', err.message);
+      }
+    }
+
     const orders = await Order.findAll({
       where: {
         partnerAmount: { [Op.ne]: null },
