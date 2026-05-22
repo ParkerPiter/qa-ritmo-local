@@ -7,15 +7,19 @@ const requireRoles = require('../middleware/requireRoles');
 
 // ============ RUTAS PÚBLICAS ============
 eventosRouter.get('/', eventosController.getAllEventos);
-eventosRouter.get('/:id', eventosController.getEventoById);
 
 // ============ RUTAS PROTEGIDAS ============
-// Mis eventos — requiere token, cualquier rol
+// Mis eventos — requiere token, cualquier rol.
+// IMPORTANTE: debe declararse ANTES de '/:id'. De lo contrario Express
+// matchea '/my-events' contra '/:id' y nunca llega a este handler.
 eventosRouter.get(
   '/my-events',
   authenticateToken,
   eventosController.getMyEventos
 );
+
+// Ruta dinámica por id — va después de las rutas estáticas
+eventosRouter.get('/:id', eventosController.getEventoById);
 
 // Solo admin, artist y partner pueden crear y editar eventos
 eventosRouter.post(

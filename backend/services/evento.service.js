@@ -152,12 +152,8 @@ class EventoService {
       order: [['createdAt', 'DESC']]
     });
 
-    if (!eventos.length) {
-      const error = new Error('No tienes eventos creados');
-      error.statusCode = 404;
-      throw error;
-    }
-
+    // Un usuario sin eventos no es un error: devolvemos lista vacía
+    // para que el frontend muestre el estado vacío sin romperse.
     return eventos;
   }
 
