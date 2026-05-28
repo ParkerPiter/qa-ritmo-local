@@ -64,6 +64,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.FLOAT,
       allowNull: false
     },
+    // FK al usuario receptor del split de Stripe Connect (rol artist o partner).
+    // Se setea automáticamente en la creación del evento si el creador tiene uno
+    // de esos roles, y dispara Destination Charges en el checkout.
     partnerUserId: {
       type: DataTypes.INTEGER,
       allowNull: true,

@@ -13,7 +13,7 @@ connectRoutes.get('/onboarding/return', authenticateToken, connectController.ver
 // Estado actual de la cuenta Connect del partner
 connectRoutes.get('/status', authenticateToken, connectController.getStatus);
 
-// Historial de pagos/splits recibidos por el partner
-connectRoutes.get('/payouts', authenticateToken, requireRoles(['partner']), connectController.getPayouts);
+// Historial de pagos/splits recibidos por el artist o partner
+connectRoutes.get('/payouts', authenticateToken, requireRoles(['artist', 'partner']), connectController.getPayouts);
 
 module.exports = connectRoutes;

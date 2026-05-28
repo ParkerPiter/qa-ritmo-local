@@ -6,11 +6,16 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 const { Op } = require('sequelize');
 const { User, Order, Evento } = require('../schemas');
 
+// Roles habilitados para recibir el split de Stripe Connect (Destination Charges).
+// Cualquier usuario con uno de estos roles puede crear su cuenta Express, recibir
+// pagos por sus eventos y consultar el historial de payouts.
+const STRIPE_PAYEE_ROLES = ['artist', 'partner'];
+
 class ConnectService {
   /**
-   * Inicia o reanuda el onboarding de Stripe Connect para un partner.
-   * Crea una cuenta Express si el partner no tiene una, luego genera el link de onboarding.
-   * @param {number} userId - ID del usuario con rol partner
+   * Inicia o reanuda el onboarding de Stripe Connect para un artist o partner.
+   * Crea una cuenta Express si el usuario no tiene una, luego genera el link de onboarding.
+   * @param {number} userId - ID del usuario con rol artist o partner
    * @returns {Promise<{ url: string }>} URL de onboarding de Stripe
    */
   async startOnboarding(userId) {
@@ -27,8 +32,8 @@ class ConnectService {
       throw error;
     }
 
-    if (user.rol !== 'partner') {
-      const error = new Error('Solo los usuarios con rol partner pueden conectar una cuenta de Stripe');
+    if (!STRIPE_PAYEE_ROLES.includes(user.rol)) {
+      const error = new Error('Solo artistas y partners pueden conectar una cuenta de Stripe');
       error.statusCode = 403;
       throw error;
     }
@@ -117,9 +122,9 @@ class ConnectService {
   }
 
   /**
-   * Devuelve el historial de splits del partner: órdenes de eventos de su propiedad
-   * con datos de comisión, monto recibido y estado.
-   * @param {number} userId - ID del partner
+   * Devuelve el historial de splits del receptor (artist o partner): órdenes de
+   * eventos de su propiedad con datos de comisión, monto recibido y estado.
+   * @param {number} userId - ID del usuario con rol artist o partner
    * @returns {Promise<{ totals: Object, payouts: Array }>}
    */
   async getPayouts(userId) {
@@ -133,8 +138,8 @@ class ConnectService {
       throw error;
     }
 
-    if (user.rol !== 'partner') {
-      const error = new Error('Solo los usuarios con rol partner pueden consultar sus pagos');
+    if (!STRIPE_PAYEE_ROLES.includes(user.rol)) {
+      const error = new Error('Solo artistas y partners pueden consultar sus pagos');
       error.statusCode = 403;
       throw error;
     }
