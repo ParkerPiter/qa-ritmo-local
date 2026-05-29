@@ -178,9 +178,11 @@ class ConnectService {
     const totals = orders.reduce((acc, o) => {
       const partner = parseFloat(o.partnerAmount) || 0;
       const fee = parseFloat(o.platformFee) || 0;
+      const stripeFee = parseFloat(o.stripeFee) || 0;
       if (o.estado === 'paid') {
         acc.totalGanado += partner;
         acc.totalComisionPlataforma += fee;
+        acc.totalCostoStripe += stripeFee;
         acc.ventasContadas += 1;
       } else if (o.estado === 'refunded') {
         acc.totalReembolsado += partner;
@@ -190,6 +192,7 @@ class ConnectService {
     }, {
       totalGanado: 0,
       totalComisionPlataforma: 0,
+      totalCostoStripe: 0,
       totalReembolsado: 0,
       ventasContadas: 0,
       reembolsosContados: 0
@@ -201,6 +204,7 @@ class ConnectService {
       totals: {
         totalGanado: totals.totalGanado.toFixed(2),
         totalComisionPlataforma: totals.totalComisionPlataforma.toFixed(2),
+        totalCostoStripe: totals.totalCostoStripe.toFixed(2),
         totalReembolsado: totals.totalReembolsado.toFixed(2),
         netoActual: (totals.totalGanado - totals.totalReembolsado).toFixed(2),
         ventasContadas: totals.ventasContadas,
@@ -214,6 +218,7 @@ class ConnectService {
         cantidad: o.cantidad,
         precioTotal: o.precioTotal,
         platformFee: o.platformFee,
+        stripeFee: o.stripeFee,
         partnerAmount: o.partnerAmount,
         stripeTransferId: o.stripeTransferId,
         estado: o.estado,

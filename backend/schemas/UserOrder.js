@@ -49,7 +49,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATE,
       allowNull: true
     },
+    // Profit neto de la plataforma (application_fee - comisión real de Stripe).
+    // Se llena en el webhook checkout.session.completed con el dato del balance_transaction.
     platformFee: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: null
+    },
+    // Comisión real cobrada por Stripe en este cargo (de balance_transaction.fee).
+    // Permite mostrar en el dashboard del receptor el desglose entre profit plataforma y costo Stripe.
+    stripeFee: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
       defaultValue: null

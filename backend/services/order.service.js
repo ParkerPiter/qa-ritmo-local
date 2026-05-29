@@ -475,16 +475,20 @@ const refundOrder = async (orderId, userId = null) => {
 };
 
 /**
- * Guarda los datos del split de pago (plataforma + partner) en una orden
- * @param {number} orderId - ID de la orden
- * @param {Object} splitData - { platformFee, partnerAmount, stripeTransferId }
+ * Guarda los datos del split de pago en una orden.
+ * - platformFee: profit neto de la plataforma (application_fee - comisión real de Stripe).
+ * - stripeFee: comisión real cobrada por Stripe en este cargo (de balance_transaction.fee).
+ * - partnerAmount: monto transferido al artist/partner (total - application_fee).
+ * - stripeTransferId: id de la transferencia generada por Stripe (para revertir en refunds).
+ * @param {number} orderId
+ * @param {Object} splitData
  * @returns {Promise<void>}
  */
-const updateSplitData = async (orderId, { platformFee, partnerAmount, stripeTransferId }) => {
+const updateSplitData = async (orderId, { platformFee, stripeFee, partnerAmount, stripeTransferId }) => {
   try {
     const order = await Order.findByPk(orderId);
     if (!order) return;
-    await order.update({ platformFee, partnerAmount, stripeTransferId });
+    await order.update({ platformFee, stripeFee, partnerAmount, stripeTransferId });
   } catch (error) {
     console.error(`Error guardando split data en orden ${orderId}:`, error.message);
   }

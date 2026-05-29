@@ -7,8 +7,7 @@ const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
 const { sendDisputeNotification } = require('../mail/mailconfig');
 const { Evento, User } = require('../schemas');
-
-const PLATFORM_FEE_PERCENT = 0.05; // 5% para la plataforma
+const { calculateApplicationFee } = require('../utils/stripeFees');
 
 // Crear sesión de checkout de Stripe
 const createCheckout = async (req, res) => {
@@ -81,11 +80,12 @@ const createCheckout = async (req, res) => {
                 attributes: ['stripeAccountId', 'stripeOnboardingDone']
             });
             if (partner?.stripeOnboardingDone && partner?.stripeAccountId) {
+                const feeBreakdown = calculateApplicationFee(unitAmountInCents, quantity || 1);
                 partnerConnectData = {
                     stripeAccountId: partner.stripeAccountId,
-                    applicationFeeAmount: Math.round(totalAmountInCents * PLATFORM_FEE_PERCENT)
+                    applicationFeeAmount: feeBreakdown.applicationFeeCents
                 };
-                console.log(`💳 Pago con split — plataforma: ${partnerConnectData.applicationFeeAmount} centavos, partner: ${partner.stripeAccountId}`);
+                console.log(`💳 Pago con split — application_fee: ${feeBreakdown.applicationFeeCents}c (profit plataforma: ${feeBreakdown.platformProfitCents}c, fee Stripe estimada: ${feeBreakdown.stripeFeeCents}c) → receptor: ${partner.stripeAccountId}`);
             }
         }
 
@@ -283,28 +283,32 @@ const handleWebhook = async (req, res) => {
                     );
                     console.log(`✅ Order ${order.id} automatically confirmed by webhook`);
 
-                    // Si hubo split, recuperar el PaymentIntent para obtener el transfer y la fee
+                    // Si hubo split, recuperar el PaymentIntent para obtener transfer, application_fee
+                    // y la fee REAL de Stripe (desde balance_transaction.fee). Eso permite separar
+                    // el profit neto de la plataforma del costo de procesamiento.
                     if (session.payment_intent) {
                         try {
                             const paymentIntent = await stripe.paymentIntents.retrieve(
                                 session.payment_intent,
-                                { expand: ['latest_charge.transfer'] }
+                                { expand: ['latest_charge.transfer', 'latest_charge.balance_transaction'] }
                             );
                             const charge = paymentIntent.latest_charge;
                             const transfer = charge?.transfer;
-                            const applicationFeeAmount = paymentIntent.application_fee_amount;
+                            const applicationFeeCents = paymentIntent.application_fee_amount;
 
-                            if (applicationFeeAmount || transfer) {
+                            if (applicationFeeCents || transfer) {
                                 const totalCents = paymentIntent.amount;
-                                const feeCents = applicationFeeAmount || 0;
-                                const partnerCents = totalCents - feeCents;
+                                const stripeFeeCents = charge?.balance_transaction?.fee || 0;
+                                const platformProfitCents = (applicationFeeCents || 0) - stripeFeeCents;
+                                const partnerCents = totalCents - (applicationFeeCents || 0);
 
                                 await orderService.updateSplitData(order.id, {
-                                    platformFee: (feeCents / 100).toFixed(2),
+                                    platformFee: (platformProfitCents / 100).toFixed(2),
+                                    stripeFee: (stripeFeeCents / 100).toFixed(2),
                                     partnerAmount: (partnerCents / 100).toFixed(2),
                                     stripeTransferId: transfer?.id || null
                                 });
-                                console.log(`💰 Split guardado — fee: ${feeCents / 100}, partner: ${partnerCents / 100}`);
+                                console.log(`💰 Split guardado — profit plataforma: ${platformProfitCents / 100}, fee Stripe: ${stripeFeeCents / 100}, receptor: ${partnerCents / 100}`);
                             }
                         } catch (splitError) {
                             console.error('⚠️ No se pudo guardar el split del pago:', splitError.message);
