@@ -28,8 +28,17 @@ async function create(req, res) {
   try {
     const { titulo, artistas, fecha, hora, lugar, descripcion, precio, ticketUrl, imagen, ciudad } = req.body;
 
-    if (!titulo || !fecha || !lugar || !ticketUrl || !ciudad) {
-      const err = new Error('titulo, fecha, lugar, ticketUrl y ciudad son requeridos');
+    if (!titulo || !fecha || !lugar || !ciudad) {
+      const err = new Error('titulo, fecha, lugar y ciudad son requeridos');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    // Si el evento es gratis (precio 0 o sin precio) ticketUrl es opcional;
+    // si tiene precio, ticketUrl es obligatorio.
+    const esGratis = precio === undefined || precio === null || precio === '' || Number(precio) === 0;
+    if (!esGratis && !ticketUrl) {
+      const err = new Error('ticketUrl es requerido cuando el evento tiene precio');
       err.statusCode = 400;
       throw err;
     }

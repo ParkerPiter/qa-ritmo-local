@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     ticketUrl: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     imagen: {
       type: DataTypes.TEXT,
