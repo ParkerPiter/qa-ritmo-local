@@ -5,9 +5,25 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
-const { sendDisputeNotification } = require('../mail/mailconfig');
+const ticketService = require('../services/ticket.service');
+const { sendDisputeNotification, sendTicketQrEmail } = require('../mail/mailconfig');
 const { Evento, User } = require('../schemas');
 const { calculateApplicationFee } = require('../utils/stripeFees');
+
+// Genera los tickets de una orden y envía los QR por email al comprador.
+// No bloqueante: un fallo aquí no debe romper la confirmación del pago.
+// Es idempotente (el servicio no recrea tickets si ya existen).
+const generateAndSendTickets = async (orderId) => {
+    try {
+        const { tickets, qrBuffers, evento, user } = await ticketService.generateTicketsForOrder(orderId);
+        if (user?.email) {
+            await sendTicketQrEmail(user.email, { eventTitle: evento?.titulo, tickets, qrBuffers });
+            console.log(`🎟️  ${tickets.length} ticket(s) QR enviados a ${user.email} (orden ${orderId})`);
+        }
+    } catch (qrErr) {
+        console.error('⚠️ No se pudo generar/enviar los QR:', qrErr.message);
+    }
+};
 
 // Crear sesión de checkout de Stripe
 const createCheckout = async (req, res) => {
@@ -187,6 +203,9 @@ const handleSuccess = async (req, res) => {
 
         console.log(`✅ Orden ${order.id} confirmada como pagada`);
 
+        // Generar y enviar tickets QR (respaldo si el webhook no llegó; idempotente).
+        await generateAndSendTickets(order.id);
+
         res.status(200).json({
             success: true,
             message: 'Payment confirmed successfully',
@@ -314,6 +333,9 @@ const handleWebhook = async (req, res) => {
                             console.error('⚠️ No se pudo guardar el split del pago:', splitError.message);
                         }
                     }
+
+                    // Generar y enviar los tickets QR al comprador (idempotente, no bloqueante).
+                    await generateAndSendTickets(order.id);
                 }
                 break;
             }

@@ -193,10 +193,55 @@ async function sendDisputeNotification(dispute) {
   return data;
 }
 
+/**
+ * Envía al comprador sus tickets con QR adjuntos tras confirmarse el pago.
+ * @param {string} to - Email del comprador.
+ * @param {Object} params
+ * @param {string} params.eventTitle - Título del evento.
+ * @param {Array} params.tickets - Filas de Ticket (se usa la cantidad).
+ * @param {Buffer[]} params.qrBuffers - Imágenes QR (PNG) en buffer, una por ticket.
+ * @returns {Promise}
+ */
+async function sendTicketQrEmail(to, { eventTitle, tickets, qrBuffers }) {
+  const total = tickets.length;
+
+  // Un adjunto PNG por ticket (Resend acepta content en base64).
+  const attachments = qrBuffers.map((buffer, i) => ({
+    filename: `ticket-${i + 1}.png`,
+    content: buffer.toString('base64')
+  }));
+
+  const ticketLines = tickets
+    .map((_, i) => `<p>🎟️ Ticket ${i + 1} de ${total} — ver archivo adjunto <strong>ticket-${i + 1}.png</strong></p>`)
+    .join('');
+
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_ADMIN,
+    to: [to],
+    subject: `Your ticket${total > 1 ? 's' : ''} for ${eventTitle}`,
+    html: `
+      <h2>Your ticket${total > 1 ? 's are' : ' is'} ready!</h2>
+      <p>Thank you for your purchase for <strong>${eventTitle}</strong>.</p>
+      <p>Present the QR code${total > 1 ? 's' : ''} below at the entrance. Each QR is valid for a single entry.</p>
+      ${ticketLines}
+      <br>
+      <p>— The Silver Glider Tickets Team</p>
+    `,
+    attachments
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 module.exports = {
   generate4DigitToken,
   sendLoginToken,
   sendContactEmail,
   sendRoleRequestConfirmation,
   sendDisputeNotification,
+  sendTicketQrEmail,
 };

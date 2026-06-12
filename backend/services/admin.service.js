@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Admin, User, SolicitudRol, Order, Evento } = require('../schemas');
 const authService = require('./auth.service');
+const artistService = require('./artist.service');
 
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
@@ -95,6 +96,12 @@ class AdminService {
     }
 
     await user.update({ rol });
+
+    // Al promover a artist, garantizamos que exista su perfil artístico ligado.
+    if (rol === 'artist') {
+      await artistService.ensureProfile(user.id);
+    }
+
     return { id: user.id, fullName: user.fullName, email: user.email, rol: user.rol, isActive: user.isActive };
   }
 
@@ -165,6 +172,11 @@ class AdminService {
 
     if (decision === 'approved') {
       await solicitud.usuario.update({ rol: solicitud.rolSolicitado });
+
+      // Al aprobar una solicitud de artist, garantizamos su perfil artístico.
+      if (solicitud.rolSolicitado === 'artist') {
+        await artistService.ensureProfile(solicitud.usuario.id);
+      }
     }
 
     return SolicitudRol.findByPk(solicitudId, {

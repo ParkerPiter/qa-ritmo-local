@@ -22,6 +22,9 @@ const SolicitudRol = require('./SolicitudRol')(sequelize, Sequelize.DataTypes);
 const LandingEvent = require('./LandingEvent')(sequelize, Sequelize.DataTypes);
 const FormRecruitment = require('./FormRecruitment')(sequelize, Sequelize.DataTypes);
 const RequestAccess = require('./RequestAccess')(sequelize, Sequelize.DataTypes);
+const Ticket = require('./Ticket')(sequelize, Sequelize.DataTypes);
+const ArtistProfile = require('./ArtistProfile')(sequelize, Sequelize.DataTypes);
+const ArtistFollow = require('./ArtistFollow')(sequelize, Sequelize.DataTypes);
 
 const db = {
   sequelize,
@@ -38,7 +41,10 @@ const db = {
   SolicitudRol,
   LandingEvent,
   FormRecruitment,
-  RequestAccess
+  RequestAccess,
+  Ticket,
+  ArtistProfile,
+  ArtistFollow
 };
 
 // Configurar asociaciones entre modelos

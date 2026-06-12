@@ -12,6 +12,7 @@ const connect = require('./connect.routes');
 const landingEvents = require('./landingEvent.routes');
 const formRecruitment = require('./formRecruitment.routes');
 const cloudinary = require('./cloudinary.routes');
+const tickets = require('./tickets.routes');
 
 router.use('/user', user);
 router.use('/organizador', organizador);
@@ -24,5 +25,6 @@ router.use('/connect', connect);
 router.use('/landing-events', landingEvents);
 router.use('/recruitment', formRecruitment);
 router.use('/cloudinary', cloudinary);
+router.use('/tickets', tickets);
 
 module.exports = router;

@@ -8,7 +8,19 @@ const principalRoutes = require('./routes/principal.routes');
 
 const port = 3001;
 const app = express();
-app.use(cors());
+app.use(cors({origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://silverglidertickets.com',
+    ];
+    // Permitir requests sin origin (Postman, curl) solo en desarrollo
+    if (!origin && process.env.NODE_ENV !== 'production') return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origen no permitido — ${origin}`));
+  },
+  credentials: true,
+}));
 
 // IMPORTANTE: Middleware para el webhook de Stripe (debe recibir raw body)
 // Esto DEBE ir ANTES de express.json() para que Stripe pueda verificar la firma
