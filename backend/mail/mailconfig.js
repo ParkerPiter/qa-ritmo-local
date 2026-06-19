@@ -171,19 +171,19 @@ async function sendDisputeNotification(dispute) {
   const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_ADMIN,
     to: [process.env.EMAIL_ADMIN],
-    subject: `⚠️ Nueva disputa en Stripe: ${dispute.id}`,
+    subject: `⚠️ New dispute in Stripe: ${dispute.id}`,
     html: `
-      <h2>⚠️ Nueva disputa recibida</h2>
-      <p>Se ha creado una nueva disputa en Stripe que requiere tu atención.</p>
+      <h2>⚠️ New dispute received</h2>
+      <p>A new dispute has been created in Stripe that requires your attention.</p>
       <table style="border-collapse: collapse; margin: 16px 0;">
         <tr><td style="padding: 6px 12px;"><strong>Dispute ID:</strong></td><td style="padding: 6px 12px;">${dispute.id}</td></tr>
         <tr><td style="padding: 6px 12px;"><strong>Charge ID:</strong></td><td style="padding: 6px 12px;">${dispute.chargeId || '—'}</td></tr>
-        <tr><td style="padding: 6px 12px;"><strong>Orden interna:</strong></td><td style="padding: 6px 12px;">${dispute.orderId ?? 'No localizada'}</td></tr>
-        <tr><td style="padding: 6px 12px;"><strong>Monto:</strong></td><td style="padding: 6px 12px;">${monto} ${(dispute.currency || '').toUpperCase()}</td></tr>
-        <tr><td style="padding: 6px 12px;"><strong>Razón:</strong></td><td style="padding: 6px 12px;">${dispute.reason || '—'}</td></tr>
-        <tr><td style="padding: 6px 12px;"><strong>Plazo para responder:</strong></td><td style="padding: 6px 12px;">${plazo}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Internal order:</strong></td><td style="padding: 6px 12px;">${dispute.orderId ?? 'Not found'}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Amount:</strong></td><td style="padding: 6px 12px;">${monto} ${(dispute.currency || '').toUpperCase()}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Reason:</strong></td><td style="padding: 6px 12px;">${dispute.reason || '—'}</td></tr>
+        <tr><td style="padding: 6px 12px;"><strong>Response deadline:</strong></td><td style="padding: 6px 12px;">${plazo}</td></tr>
       </table>
-      <p>Revisá la disputa en el <a href="https://dashboard.stripe.com/disputes/${dispute.id}">Dashboard de Stripe</a>.</p>
+      <p>Check the dispute in the <a href="https://dashboard.stripe.com/disputes/${dispute.id}">Stripe Dashboard</a>.</p>
     `
   });
 
