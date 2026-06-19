@@ -29,9 +29,9 @@ async function createEvento(req, res) {
       throw error;
     }
 
-    // Si el creador tiene rol 'artist' o 'partner', vincularlo como receptor del evento
+    // Si el creador tiene rol 'artist', 'partner' o 'promoter', vincularlo como receptor del evento
     // para habilitar el split de pagos de Stripe Connect
-    const partnerUserId = ['artist', 'partner'].includes(req.user?.role) ? req.user.id : null;
+    const partnerUserId = ['artist', 'partner', 'promoter'].includes(req.user?.role) ? req.user.id : null;
 
     const evento = await eventoService.createEvento(organizadorId, {
       titulo, ubicacion, maps, fecha,

@@ -9,7 +9,7 @@ const { User, Order, Evento } = require('../schemas');
 // Roles habilitados para recibir el split de Stripe Connect (Destination Charges).
 // Cualquier usuario con uno de estos roles puede crear su cuenta Express, recibir
 // pagos por sus eventos y consultar el historial de payouts.
-const STRIPE_PAYEE_ROLES = ['artist', 'partner'];
+const STRIPE_PAYEE_ROLES = ['artist', 'partner', 'promoter'];
 
 class ConnectService {
   /**

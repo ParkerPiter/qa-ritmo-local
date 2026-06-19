@@ -5,23 +5,81 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
-const ticketService = require('../services/ticket.service');
-const { sendDisputeNotification, sendTicketQrEmail } = require('../mail/mailconfig');
-const { Evento, User } = require('../schemas');
+const ticketingService = require('../services/ticketing.service');
+const { sendDisputeNotification } = require('../mail/mailconfig');
+const { Order, Evento, User } = require('../schemas');
 const { calculateApplicationFee } = require('../utils/stripeFees');
 
-// Genera los tickets de una orden y envía los QR por email al comprador.
-// No bloqueante: un fallo aquí no debe romper la confirmación del pago.
-// Es idempotente (el servicio no recrea tickets si ya existen).
-const generateAndSendTickets = async (orderId) => {
+// Separa un nombre completo en (first, last) para el contrato del ticketing.
+const splitFullName = (fullName = '') => {
+    const parts = String(fullName).trim().split(/\s+/).filter(Boolean);
+    const first = parts.shift() || '';
+    const last = parts.join(' ');
+    return { first, last };
+};
+
+// Emite los tickets de una orden ya pagada delegando en el microservicio de ticketing
+// (seam POST /api/orders/import). El backend principal ya NO genera QR ni email de
+// entrada: esa responsabilidad vive en el microservicio externo.
+// - No bloqueante: un fallo aquí no debe romper la confirmación del pago.
+// - Idempotente: el import del ticketing deduplica por external_order_id, así que
+//   reintentos del webhook (o el respaldo de /success) no duplican tickets.
+const emitTicketsForOrder = async (orderId) => {
+    if (!ticketingService.isConfigured()) {
+        console.warn(`⚠️  Ticketing no configurado; se omite la emisión de tickets (orden ${orderId}).`);
+        return;
+    }
     try {
-        const { tickets, qrBuffers, evento, user } = await ticketService.generateTicketsForOrder(orderId);
-        if (user?.email) {
-            await sendTicketQrEmail(user.email, { eventTitle: evento?.titulo, tickets, qrBuffers });
-            console.log(`🎟️  ${tickets.length} ticket(s) QR enviados a ${user.email} (orden ${orderId})`);
+        const order = await Order.findByPk(orderId, {
+            include: [
+                { model: Evento, as: 'evento', attributes: ['id', 'titulo'] },
+                { model: User, as: 'user', attributes: ['id', 'email', 'fullName', 'phone'] }
+            ]
+        });
+        if (!order) {
+            console.error(`No se encontró la orden ${orderId} para emitir tickets.`);
+            return;
         }
-    } catch (qrErr) {
-        console.error('⚠️ No se pudo generar/enviar los QR:', qrErr.message);
+
+        const { first, last } = splitFullName(order.user?.fullName);
+        const result = await ticketingService.importOrder({
+            external_order_id: String(order.id),
+            external_event_id: String(order.eventoId),
+            buyer_first_name: first,
+            buyer_last_name: last,
+            buyer_email: order.user?.email,
+            buyer_phone: order.user?.phone || null,
+            total_amount: Number(order.precioTotal),
+            quantity: order.cantidad,
+            ticket_type: 'General Admission'
+        });
+
+        // Paso E: persistir order_number y secure_token devueltos para trazabilidad.
+        if (result?.order) {
+            await orderService.updateTicketingData(order.id, {
+                ticketingOrderNumber: result.order.order_number || null,
+                ticketingSecureToken: result.order.secure_token || null
+            });
+            console.log(`🎟️  Tickets emitidos en el ticketing (orden ${order.id} → ${result.order.order_number}).`);
+        }
+    } catch (err) {
+        // El pago ya está confirmado; la idempotencia del import cubre reintentos.
+        console.error(`⚠️ No se pudo emitir tickets en el ticketing (orden ${orderId}):`, err.message);
+    }
+};
+
+// Anula los tickets de una orden en el ticketing tras un refund (Paso D), para que
+// dejen de ser válidos en puerta. No bloqueante.
+const voidTicketsForOrder = async (orderId) => {
+    if (!ticketingService.isConfigured()) {
+        console.warn(`⚠️  Ticketing no configurado; se omite la anulación de tickets (orden ${orderId}).`);
+        return;
+    }
+    try {
+        await ticketingService.voidOrder(String(orderId));
+        console.log(`🚫 Tickets anulados en el ticketing (orden ${orderId}).`);
+    } catch (err) {
+        console.error(`⚠️ No se pudo anular tickets en el ticketing (orden ${orderId}):`, err.message);
     }
 };
 
@@ -203,8 +261,8 @@ const handleSuccess = async (req, res) => {
 
         console.log(`✅ Orden ${order.id} confirmada como pagada`);
 
-        // Generar y enviar tickets QR (respaldo si el webhook no llegó; idempotente).
-        await generateAndSendTickets(order.id);
+        // Emitir tickets en el ticketing (respaldo si el webhook no llegó; idempotente).
+        await emitTicketsForOrder(order.id);
 
         res.status(200).json({
             success: true,
@@ -334,8 +392,8 @@ const handleWebhook = async (req, res) => {
                         }
                     }
 
-                    // Generar y enviar los tickets QR al comprador (idempotente, no bloqueante).
-                    await generateAndSendTickets(order.id);
+                    // Emitir los tickets en el ticketing externo (idempotente, no bloqueante).
+                    await emitTicketsForOrder(order.id);
                 }
                 break;
             }
@@ -416,6 +474,11 @@ const handleWebhook = async (req, res) => {
                             // La reversión fallida queda en logs para que el admin actúe manualmente.
                         }
                     }
+
+                    // Propagar la anulación al ticketing: los tickets de esta orden
+                    // dejan de ser válidos en puerta (el check-in por escaneo ya rechaza
+                    // tickets refunded/void).
+                    await voidTicketsForOrder(order.id);
                 }
                 break;
             }

@@ -494,6 +494,25 @@ const updateSplitData = async (orderId, { platformFee, stripeFee, partnerAmount,
   }
 };
 
+/**
+ * Guarda los datos de trazabilidad devueltos por el microservicio de ticketing (Paso E).
+ * - ticketingOrderNumber: order_number (SGC-…) de la orden emitida en el ticketing.
+ * - ticketingSecureToken: secure_token de esa orden (llave de la wallet del comprador).
+ * No bloqueante: un fallo aquí no debe afectar la confirmación del pago.
+ * @param {number} orderId
+ * @param {Object} ticketingData
+ * @returns {Promise<void>}
+ */
+const updateTicketingData = async (orderId, { ticketingOrderNumber, ticketingSecureToken }) => {
+  try {
+    const order = await Order.findByPk(orderId);
+    if (!order) return;
+    await order.update({ ticketingOrderNumber, ticketingSecureToken });
+  } catch (error) {
+    console.error(`Error guardando datos de ticketing en orden ${orderId}:`, error.message);
+  }
+};
+
 module.exports = {
   createOrder,
   confirmOrder,
@@ -503,5 +522,6 @@ module.exports = {
   getOrderByPaymentIntentId,
   getUserOrders,
   refundOrder,
-  updateSplitData
+  updateSplitData,
+  updateTicketingData
 };

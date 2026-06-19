@@ -3,7 +3,7 @@ const authService = require('./auth.service');
 const orderService = require('./order.service');
 const { sendRoleRequestConfirmation } = require('../mail/mailconfig');
 
-const ROLES_USUARIO = ['client', 'partner', 'artist'];
+const ROLES_USUARIO = ['client', 'partner', 'artist', 'promoter'];
 
 class UserService {
   /**
@@ -421,11 +421,11 @@ class UserService {
    * Crea una solicitud de cambio de rol y envía confirmación por email
    * @param {number} userId - ID del usuario
    * @param {string} userEmail - Email del usuario (del token)
-   * @param {string} rolSolicitado - 'artist' | 'partner'
+   * @param {string} rolSolicitado - 'artist' | 'partner' | 'promoter'
    * @returns {Promise<Object>} Solicitud creada
    */
   async createRoleRequest(userId, userEmail, rolSolicitado) {
-    const ROLES_PERMITIDOS = ['artist', 'partner'];
+    const ROLES_PERMITIDOS = ['artist', 'partner', 'promoter'];
     if (!ROLES_PERMITIDOS.includes(rolSolicitado)) {
       const error = new Error(`Rol inválido. Solo puedes solicitar: ${ROLES_PERMITIDOS.join(', ')}`);
       error.statusCode = 400;

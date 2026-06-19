@@ -21,18 +21,18 @@ eventosRouter.get(
 // Ruta dinámica por id — va después de las rutas estáticas
 eventosRouter.get('/:id', eventosController.getEventoById);
 
-// Solo admin, artist y partner pueden crear y editar eventos
+// Solo admin, artist, partner y promoter pueden crear y editar eventos
 eventosRouter.post(
   '/',
   authenticateToken,
-  requireRoles(['admin', 'artist', 'partner']),
+  requireRoles(['admin', 'artist', 'partner', 'promoter']),
   eventosController.createEvento
 );
 
 eventosRouter.put(
   '/:id',
   authenticateToken,
-  requireRoles(['admin', 'artist', 'partner']),
+  requireRoles(['admin', 'artist', 'partner', 'promoter']),
   eventosController.updateEvento
 );
 

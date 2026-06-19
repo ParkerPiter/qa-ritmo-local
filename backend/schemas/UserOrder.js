@@ -72,6 +72,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null
+    },
+    // Trazabilidad de la integración con el microservicio de ticketing (Paso E del acople).
+    // order_number (formato SGC-…) devuelto por POST /api/orders/import del ticketing.
+    ticketingOrderNumber: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
+    },
+    // secure_token de la orden en el ticketing: llave de la wallet del comprador (magic link).
+    ticketingSecureToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
     }
   });
 

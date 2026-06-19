@@ -340,7 +340,7 @@ async function updateRole(req, res) {
 }
 
 /**
- * Solicita un cambio de rol (client → artist | partner)
+ * Solicita un cambio de rol (client → artist | partner | promoter)
  */
 async function requestRoleChange(req, res) {
   try {

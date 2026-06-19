@@ -48,8 +48,8 @@ const createEvento = async (req, res) => {
       throw error;
     }
 
-    // Si el creador es artist o partner, vincular el evento a su cuenta para el split de Stripe
-    const partnerUserId = ['artist', 'partner'].includes(req.user.role) ? req.user.id : null;
+    // Si el creador es artist, partner o promoter, vincular el evento a su cuenta para el split de Stripe
+    const partnerUserId = ['artist', 'partner', 'promoter'].includes(req.user.role) ? req.user.id : null;
 
     const evento = await eventoService.createEvento(organizadorId || null, {
       titulo, descripcion, fecha, precio,

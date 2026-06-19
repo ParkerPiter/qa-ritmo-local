@@ -11,7 +11,13 @@ const authenticateToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (ex) {
-    res.status(400).json({ message: 'Token Invalido' });
+    // Diferenciar expirado de inválido y devolver SIEMPRE 401 para que el
+    // frontend pueda auto-cerrar sesión de forma consistente.
+    const expired = ex.name === 'TokenExpiredError';
+    return res.status(401).json({
+      message: expired ? 'Token expirado' : 'Token inválido',
+      code: expired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID',
+    });
   }
 };
 

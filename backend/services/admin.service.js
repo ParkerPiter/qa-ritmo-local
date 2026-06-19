@@ -5,7 +5,7 @@ const artistService = require('./artist.service');
 
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
-const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist'];
+const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist', 'promoter'];
 
 class AdminService {
   /**

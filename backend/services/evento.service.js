@@ -1,7 +1,32 @@
 const { Evento, Categoria, Organizador, Sequelize } = require('../schemas');
 const { Op } = Sequelize;
+const ticketingService = require('./ticketing.service');
 
 class EventoService {
+  /**
+   * Propaga el alta/edición de un evento al microservicio de ticketing (Paso C del acople).
+   * Upsert idempotente por `external_event_id` (= Evento.id del principal). Garantiza que
+   * el evento exista en el ticketing antes del primer import de órdenes.
+   * No bloqueante: se ejecuta en background y un fallo no afecta la operación del evento.
+   * @param {Object} evento - instancia/registro de Evento con sus campos.
+   * @returns {Promise<void>}
+   */
+  async propagarEventoAlTicketing(evento) {
+    if (!evento || !ticketingService.isConfigured()) return;
+    try {
+      await ticketingService.upsertEvent(evento.id, {
+        name: evento.titulo,
+        event_date: evento.fecha,
+        venue: evento.ubicacion || null,
+        // El principal no maneja un cupo total de evento (solo límite por usuario).
+        capacity: null,
+        image_url: Array.isArray(evento.galeriaImagenes) ? (evento.galeriaImagenes[0] || null) : null
+      });
+      console.log(`🔁 Evento ${evento.id} propagado al ticketing.`);
+    } catch (err) {
+      console.error(`⚠️ No se pudo propagar el evento ${evento?.id} al ticketing:`, err.message);
+    }
+  }
   /**
    * Obtiene todos los eventos cuya venta está activa al momento de la consulta.
    * - Si fechaInicioVenta es null → sin restricción de inicio
@@ -110,6 +135,9 @@ class EventoService {
       await evento.addCategorias(categorias);
     }
 
+    // Propagar al ticketing en background (no bloquea la respuesta al creador).
+    this.propagarEventoAlTicketing(evento);
+
     // Devolver evento con sus relaciones
     return Evento.findByPk(evento.id, {
       include: [
@@ -182,6 +210,9 @@ class EventoService {
       const categorias = await Categoria.findAll({ where: { nombre: categoriasIds } });
       await evento.setCategorias(categorias);
     }
+
+    // Propagar la edición al ticketing en background (no bloquea la respuesta).
+    this.propagarEventoAlTicketing(evento);
   }
 
   /**

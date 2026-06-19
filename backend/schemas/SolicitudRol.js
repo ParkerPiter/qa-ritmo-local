@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     rolSolicitado: {
-      type: DataTypes.ENUM('artist', 'partner'),
+      type: DataTypes.ENUM('artist', 'partner', 'promoter'),
       allowNull: false
     },
     estado: {
