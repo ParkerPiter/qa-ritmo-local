@@ -15,8 +15,11 @@ app.use(cors({origin: (origin, callback) => {
       'https://silverglidertickets.com',
       'https://silver-glider-tickets-production.up.railway.app'
     ];
-    // Permitir requests sin origin (Postman, curl) solo en desarrollo
-    if (!origin && process.env.NODE_ENV !== 'production') return callback(null, true);
+    // Permitir requests sin Origin (webhooks de Stripe, llamadas server-to-server,
+    // health checks de Render, Postman/curl). CORS es un mecanismo del navegador: las
+    // peticiones sin Origin no son cross-origin y bloquearlas solo rompe el webhook de
+    // pago en producción sin aportar seguridad.
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origen no permitido — ${origin}`));
   },
