@@ -34,8 +34,12 @@ const request = async (method, path, body) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
+  const url = `${TICKETING_URL}${path}`;
+  const startedAt = Date.now();
+  console.log(`➡️  [ticketing] ${method} ${url} — enviando request al microservicio…`);
+
   try {
-    const res = await fetch(`${TICKETING_URL}${path}`, {
+    const res = await fetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -45,6 +49,7 @@ const request = async (method, path, body) => {
       signal: controller.signal
     });
 
+    const elapsedMs = Date.now() - startedAt;
     const text = await res.text();
     let data = null;
     if (text) {
@@ -52,13 +57,23 @@ const request = async (method, path, body) => {
     }
 
     if (!res.ok) {
+      console.error(`⬅️  [ticketing] ${method} ${path} — respuesta ${res.status} en ${elapsedMs}ms (ERROR)`);
       const error = new Error((data && data.error) || `Ticketing respondió ${res.status}`);
       error.statusCode = res.status;
       error.responseData = data;
       throw error;
     }
 
+    console.log(`⬅️  [ticketing] ${method} ${path} — respuesta ${res.status} OK en ${elapsedMs}ms`);
     return data;
+  } catch (err) {
+    // Distinguir un timeout/abort de un error HTTP ya logueado arriba.
+    if (err.name === 'AbortError') {
+      console.error(`⏱️  [ticketing] ${method} ${path} — TIMEOUT tras ${Date.now() - startedAt}ms (límite ${DEFAULT_TIMEOUT_MS}ms)`);
+    } else if (!err.statusCode) {
+      console.error(`❌ [ticketing] ${method} ${path} — fallo de red: ${err.message}`);
+    }
+    throw err;
   } finally {
     clearTimeout(timeout);
   }

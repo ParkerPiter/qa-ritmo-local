@@ -41,6 +41,8 @@ const emitTicketsForOrder = async (orderId) => {
             return;
         }
 
+        console.log(`🎫 [pago→ticketing] Emitiendo tickets/QR para la orden ${order.id} (evento ${order.eventoId}, ${order.cantidad} ticket(s), comprador ${order.user?.email}).`);
+
         const { first, last } = splitFullName(order.user?.fullName);
         const result = await ticketingService.importOrder({
             external_order_id: String(order.id),
