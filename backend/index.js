@@ -13,6 +13,7 @@ app.use(cors({origin: (origin, callback) => {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://silverglidertickets.com',
+      'https://silver-glider-tickets-production.up.railway.app'
     ];
     // Permitir requests sin origin (Postman, curl) solo en desarrollo
     if (!origin && process.env.NODE_ENV !== 'production') return callback(null, true);
