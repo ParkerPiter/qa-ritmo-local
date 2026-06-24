@@ -64,134 +64,142 @@ const generos = [
 ];
 const ubicaciones = ['Los Angeles', 'San Francisco'];
 
+/**
+ * Genera una fecha relativa a HOY (momento en que se corre el seed): hoy + offsetDays,
+ * con la hora indicada. Así los eventos del seed siempre quedan vigentes sin tener que
+ * editar fechas fijas cada cierto tiempo.
+ * @param {number} offsetDays - días desde hoy (negativo = pasado).
+ * @param {number} hour - hora (0-23).
+ * @returns {Date}
+ */
+const atDaysFromNow = (offsetDays, hour = 20) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+};
+
+// `daysAhead` = días desde hoy en que ocurre el evento. La ventana de venta se deriva
+// en el loop: abre 7 días antes de hoy y cierra 2h antes del evento, de modo que TODOS
+// quedan con venta activa al momento de sembrar (siempre que daysAhead >= 1).
 const eventos = [
   {
     title: "Pop Gala 2026",
-    date: "2026-03-15 20:00:00",
+    daysAhead: 5,
+    hour: 20,
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Pop',
     eventLocation: 'Los Angeles',
-    saleStart: "2026-02-01 00:00:00",
-    saleEnd: "2026-03-15 18:00:00",
     maxTickets: 4,
     categoria: 'Live Music'
   },
   {
     title: "Indie Rock Fest",
-    date: "2026-04-12 18:00:00",
+    daysAhead: 9,
+    hour: 18,
     location: "The Fillmore, SF",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Indie / Alternative',
     eventLocation: 'San Francisco',
-    saleStart: "2026-03-01 00:00:00",
-    saleEnd: "2026-04-12 16:00:00",
     maxTickets: 6,
     categoria: 'Festival'
   },
   {
     title: "EDM in the Park",
-    date: "2026-03-21 22:00:00",
+    daysAhead: 12,
+    hour: 22,
     location: "Golden Gate Park, SF",
     image: "/public/images/musicImg.png",
     type: 'Free',
     genre: 'EDM (Electronic Dance Music)',
     eventLocation: 'San Francisco',
-    saleStart: "2026-03-01 00:00:00",
-    saleEnd: "2026-03-21 20:00:00",
     maxTickets: null,
     categoria: 'Party / Nightlife'
   },
   {
     title: "Band vs Band 2026",
-    date: "2026-03-19 16:00:00",
+    daysAhead: 16,
+    hour: 16,
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Free',
     genre: 'Rock',
     eventLocation: 'Los Angeles',
-    saleStart: "2026-03-01 00:00:00",
-    saleEnd: "2026-03-19 14:00:00",
     maxTickets: null,
     categoria: 'Live Music'
   },
   {
     title: "Punk Rock Fest",
-    date: "2026-03-28 18:00:00",
+    daysAhead: 20,
+    hour: 18,
     location: "The Fillmore, SF",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Punk',
     eventLocation: 'San Francisco',
-    saleStart: "2026-03-10 00:00:00",
-    saleEnd: "2026-03-28 16:00:00",
     maxTickets: 2,
     categoria: 'Festival'
   },
   {
     title: "BTS Live Concert",
-    date: "2026-04-08 22:00:00",
+    daysAhead: 25,
+    hour: 22,
     location: "Golden Gate Park, SF",
     image: "/public/images/musicImg.png",
     type: 'Paid',
     genre: 'K-Pop',
     eventLocation: 'San Francisco',
-    saleStart: "2026-06-15 00:00:00",
-    saleEnd: "2026-06-08 20:00:00",
     maxTickets: 4,
     categoria: 'Live Music'
   },
   {
     title: "Band vs Band",
-    date: "2026-06-12 16:00:00",
+    daysAhead: 30,
+    hour: 16,
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Rock',
     eventLocation: 'Los Angeles',
-    saleStart: "2026-06-01 00:00:00",
-    saleEnd: "2026-06-12 14:00:00",
     maxTickets: null,
     categoria: 'Live Music'
   },
   {
     title: "Pop Classic",
-    date: "2026-06-05 16:00:00",
+    daysAhead: 38,
+    hour: 16,
     location: "Staples Center, LA",
     image: "/public/images/musicImg.png",
     type: 'Paid',
     genre: 'Pop',
     eventLocation: 'Los Angeles',
-    saleStart: "2026-03-15 00:00:00",
-    saleEnd: "2026-06-05 14:00:00",
     maxTickets: 6,
     categoria: 'Live Music'
   },
   {
     title: "90's Rock Punk",
-    date: "2026-05-31 16:00:00",
+    daysAhead: 45,
+    hour: 16,
     location: "Staples Center, LA",
     image: "/public/images/card-2.jpg",
     type: 'Paid',
     genre: 'Rock',
     eventLocation: 'San Francisco',
-    saleStart: "2026-04-01 00:00:00",
-    saleEnd: "2026-05-31 14:00:00",
     maxTickets: 8,
     categoria: 'Live Music'
   },
   {
     title: "Pop of 20's",
-    date: "2026-06-16 16:00:00",
+    daysAhead: 60,
+    hour: 16,
     location: "Staples Center, LA",
     image: "/public/images/card-3.jpg",
     type: 'Paid',
     genre: 'Pop',
     eventLocation: 'San Francisco',
-    saleStart: "2026-03-25 00:00:00",
-    saleEnd: "2026-06-16 14:00:00",
     maxTickets: null,
     categoria: 'Party / Nightlife'
   }
@@ -294,19 +302,25 @@ async function seed() {
         const galeriaImagenes = [cloudImg ? cloudImg.url : eventoData.image];
         const galeriaPublicIds = cloudImg ? [cloudImg.publicId] : [];
 
+        // Fechas relativas a hoy: el evento ocurre en `daysAhead` días; la venta abrió
+        // hace 7 días y cierra 2h antes del evento → ventana activa al sembrar.
+        const fecha = atDaysFromNow(eventoData.daysAhead, eventoData.hour ?? 20);
+        const fechaInicioVenta = atDaysFromNow(-7, 0);
+        const fechaFinVenta = new Date(fecha.getTime() - 2 * 60 * 60 * 1000);
+
         const newEvento = await Evento.create({
             titulo: eventoData.title,
             ubicacion: eventoData.location,
             maps: mapsByLocation[eventoData.location] || `https://maps.google.com/?q=${encodeURIComponent(eventoData.location)}`,
-            fecha: new Date(eventoData.date),
+            fecha,
             galeriaImagenes,
             galeriaPublicIds,
             descripcion: lorem,
             useful_information: usefulInfo,
             organizadorId: Math.random() > 0.5 ? organizador1.id : organizador2.id,
             precio: eventoData.type === 'Free' ? 0 : Math.floor(Math.random() * 100) + 20,
-            fechaInicioVenta: eventoData.saleStart ? new Date(eventoData.saleStart) : null,
-            fechaFinVenta: eventoData.saleEnd ? new Date(eventoData.saleEnd) : null,
+            fechaInicioVenta,
+            fechaFinVenta,
             maxTicketsPorUsuario: eventoData.maxTickets || null,
         });
 
