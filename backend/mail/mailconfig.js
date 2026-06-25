@@ -120,7 +120,7 @@ async function sendContactEmail(params) {
  * @returns {Promise}
  */
 async function sendRoleRequestConfirmation(to, fullName, rolSolicitado, fechaSolicitud) {
-  const ROL_LABELS = { artist: 'Artista', partner: 'Partner', promoter: 'Promoter' };
+  const ROL_LABELS = { artist: 'Artista', partner: 'Partner', promoter: 'Promoter', venue: 'Venue' };
   const rolLabel = ROL_LABELS[rolSolicitado] || 'Partner';
   const fecha = new Date(fechaSolicitud).toLocaleDateString('es-ES', {
     year: 'numeric', month: 'long', day: 'numeric'

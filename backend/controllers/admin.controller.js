@@ -59,14 +59,14 @@ async function updateUserRole(req, res) {
         const { rol } = req.body;
 
         if (!rol) {
-            const error = new Error('El campo rol es requerido');
+            const error = new Error('The field "rol" is required in the request body');
             error.statusCode = 400;
             throw error;
         }
 
         const user = await adminService.updateUserRole(id, rol);
         handleSuccess(res, {
-            message: 'Rol actualizado exitosamente',
+            message: 'Role updated successfully',
             user
         });
     } catch (error) {

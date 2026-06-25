@@ -10,7 +10,7 @@ async function createUser(req, res) {
     
     if (!email || !fullName || !password) {
       return res.status(400).json({ 
-        message: 'Email, nombre completo y contraseña son requeridos' 
+        message: 'Email, full name and password are required' 
       });
     }
 
@@ -34,7 +34,7 @@ async function loginUser(req, res) {
     
     if (!email || !password) {
       return res.status(400).json({ 
-        message: 'Email y contraseña son requeridos' 
+        message: 'Email and password are required' 
       });
     }
 
@@ -63,7 +63,7 @@ async function loginWithGoogle(req, res) {
     
     if (!email || !fullName) {
       return res.status(400).json({ 
-        message: 'Email y nombre completo son requeridos' 
+        message: 'Email and full name are required' 
       });
     }
     
@@ -130,7 +130,7 @@ async function updatePassword(req, res) {
     
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ 
-        message: 'Actual password and new password are required' 
+        message: 'Current password and new password are required' 
       });
     }
 
@@ -159,7 +159,7 @@ async function updateUser(req, res) {
     
     if (!email || !newPassword) {
       return res.status(400).json({ 
-        message: 'Email y nueva contraseña son requeridos' 
+        message: 'Email and new password are required' 
       });
     }
     
@@ -317,7 +317,8 @@ async function deleteUser(req, res) {
 }
 
 /**
- * Actualiza el rol del usuario autenticado (no permite 'admin')
+ * Actualiza el rol del usuario autenticado. Solo permite roles no elevados (volver a
+ * 'client'); artist/partner/promoter/venue deben pedirse vía /role-request (y admin).
  */
 async function updateRole(req, res) {
   try {
@@ -325,13 +326,13 @@ async function updateRole(req, res) {
     const { rol } = req.body;
 
     if (!rol) {
-      return res.status(400).json({ message: 'El campo rol es requerido' });
+      return res.status(400).json({ message: 'The role field is required' });
     }
 
     const user = await userService.updateRole(userId, rol);
 
     handleSuccess(res, {
-      message: 'Rol actualizado exitosamente',
+      message: 'Role updated successfully',
       user
     });
   } catch (error) {
@@ -349,12 +350,12 @@ async function requestRoleChange(req, res) {
     const userEmail = req.user.email;
 
     if (!rolSolicitado) {
-      return res.status(400).json({ message: 'El campo rolSolicitado es requerido' });
+      return res.status(400).json({ message: 'The requested role field is required' });
     }
 
     const solicitud = await userService.createRoleRequest(userId, userEmail, rolSolicitado);
     handleSuccess(res, {
-      message: 'Solicitud enviada exitosamente. Recibirás un correo de confirmación.',
+      message: 'Role change request sent successfully. You will receive a confirmation email.',
       solicitud
     }, 201);
   } catch (error) {

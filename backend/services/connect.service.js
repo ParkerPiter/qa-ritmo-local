@@ -9,7 +9,7 @@ const { User, Order, Evento } = require('../schemas');
 // Roles habilitados para recibir el split de Stripe Connect (Destination Charges).
 // Cualquier usuario con uno de estos roles puede crear su cuenta Express, recibir
 // pagos por sus eventos y consultar el historial de payouts.
-const STRIPE_PAYEE_ROLES = ['artist', 'partner', 'promoter'];
+const STRIPE_PAYEE_ROLES = ['artist', 'partner', 'promoter', 'venue'];
 
 class ConnectService {
   /**
@@ -33,7 +33,7 @@ class ConnectService {
     }
 
     if (!STRIPE_PAYEE_ROLES.includes(user.rol)) {
-      const error = new Error('Solo artistas y partners pueden conectar una cuenta de Stripe');
+      const error = new Error('Tu rol no puede conectar una cuenta de Stripe');
       error.statusCode = 403;
       throw error;
     }
@@ -139,7 +139,7 @@ class ConnectService {
     }
 
     if (!STRIPE_PAYEE_ROLES.includes(user.rol)) {
-      const error = new Error('Solo artistas y partners pueden consultar sus pagos');
+      const error = new Error('Tu rol no puede consultar el historial de pagos');
       error.statusCode = 403;
       throw error;
     }

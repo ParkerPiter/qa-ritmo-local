@@ -3,7 +3,12 @@ const authService = require('./auth.service');
 const orderService = require('./order.service');
 const { sendRoleRequestConfirmation } = require('../mail/mailconfig');
 
-const ROLES_USUARIO = ['client', 'partner', 'artist', 'promoter'];
+const ROLES_USUARIO = ['client', 'partner', 'artist', 'promoter', 'venue'];
+
+// Roles "elevados" (receptores de pago / creadores de eventos): NO se pueden
+// auto-asignar vía PUT /user/role. Deben obtenerse por solicitud + aprobación de admin
+// (POST /user/role-request → admin la aprueba). updateRole solo permite volver a 'client'.
+const ROLES_ELEVADOS = ['artist', 'partner', 'promoter', 'venue'];
 
 class UserService {
   /**
@@ -425,22 +430,22 @@ class UserService {
    * @returns {Promise<Object>} Solicitud creada
    */
   async createRoleRequest(userId, userEmail, rolSolicitado) {
-    const ROLES_PERMITIDOS = ['artist', 'partner', 'promoter'];
+    const ROLES_PERMITIDOS = ['artist', 'partner', 'promoter', 'venue'];
     if (!ROLES_PERMITIDOS.includes(rolSolicitado)) {
-      const error = new Error(`Rol inválido. Solo puedes solicitar: ${ROLES_PERMITIDOS.join(', ')}`);
+      const error = new Error(`Invalid role. You can only request: ${ROLES_PERMITIDOS.join(', ')}`);
       error.statusCode = 400;
       throw error;
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      const error = new Error('Usuario no encontrado');
+      const error = new Error('User not found');
       error.statusCode = 404;
       throw error;
     }
 
     if (user.rol !== 'client') {
-      const error = new Error('Solo los usuarios con rol client pueden solicitar un cambio de rol');
+      const error = new Error('Only users with the client role can request a role change');
       error.statusCode = 403;
       throw error;
     }
@@ -450,7 +455,7 @@ class UserService {
       where: { userId, estado: 'pending' }
     });
     if (solicitudExistente) {
-      const error = new Error('Ya tienes una solicitud de cambio de rol pendiente');
+      const error = new Error('You already have a pending role change request');
       error.statusCode = 409;
       throw error;
     }
@@ -473,15 +478,28 @@ class UserService {
   }
 
   /**
-   * Actualiza el rol del usuario autenticado (no permite asignarse 'admin')
+   * Actualiza el rol del usuario autenticado.
+   * Solo permite la auto-asignación de roles NO elevados (en la práctica, volver a
+   * 'client'). Los roles elevados (artist, partner, promoter, venue) deben obtenerse
+   * por solicitud + aprobación de admin (POST /user/role-request), no por esta vía.
+   * Tampoco permite asignarse 'admin'.
    * @param {number} userId - ID del usuario
-   * @param {string} rol - Nuevo rol ('client', 'partner', 'artist')
+   * @param {string} rol - Nuevo rol (solo 'client')
    * @returns {Promise<Object>} Datos actualizados del usuario
    */
   async updateRole(userId, rol) {
     if (!ROLES_USUARIO.includes(rol)) {
       const error = new Error(`Rol inválido. Los roles permitidos son: ${ROLES_USUARIO.join(', ')}`);
       error.statusCode = 400;
+      throw error;
+    }
+
+    // Bloquear la auto-promoción a roles elevados: deben pasar por el flujo de solicitud.
+    if (ROLES_ELEVADOS.includes(rol)) {
+      const error = new Error(
+        `El rol "${rol}" debe solicitarse y ser aprobado por un administrador. Usa POST /api/user/role-request.`
+      );
+      error.statusCode = 403;
       throw error;
     }
 
