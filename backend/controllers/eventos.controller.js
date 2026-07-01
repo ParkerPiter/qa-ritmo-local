@@ -33,17 +33,23 @@ const getEventoById = async (req, res) => {
 const createEvento = async (req, res) => {
   try {
     const {
-      titulo, descripcion, fecha, precio,
+      titulo, descripcion, descripcionDetallada, fecha, precio,
       ubicacion, maps, galeriaImagenes,
-      galeriaPublicIds,
+      galeriaPublicIds, lineup,
       useful_information, organizadorId,
       categoriasIds, maxTicketsPorUsuario,
       fechaInicioVenta, fechaFinVenta,
       category
     } = req.body;
 
-    if (!titulo || !descripcion || !fecha || precio === undefined || !galeriaImagenes) {
-      const error = new Error('Faltan campos requeridos: titulo, descripcion, fecha, precio, galeriaImagenes');
+    if (!titulo || !descripcion || !descripcionDetallada || !fecha || precio === undefined || !galeriaImagenes) {
+      const error = new Error('Faltan campos requeridos: titulo, descripcion, descripcionDetallada, fecha, precio, galeriaImagenes');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (typeof descripcionDetallada !== 'string' || descripcionDetallada.length < 500) {
+      const error = new Error('descripcionDetallada debe tener al menos 500 caracteres');
       error.statusCode = 400;
       throw error;
     }
@@ -52,9 +58,10 @@ const createEvento = async (req, res) => {
     const partnerUserId = ['artist', 'partner', 'promoter', 'venue'].includes(req.user.role) ? req.user.id : null;
 
     const evento = await eventoService.createEvento(organizadorId || null, {
-      titulo, descripcion, fecha, precio,
+      titulo, descripcion, descripcionDetallada, fecha, precio,
       ubicacion, maps, galeriaImagenes,
       galeriaPublicIds: galeriaPublicIds || [],
+      lineup: lineup || [],
       useful_information,
       partnerUserId,
       categoriasIds,
@@ -76,8 +83,8 @@ const updateEvento = async (req, res) => {
     const { id } = req.params;
 
     const camposPermitidos = [
-      'titulo', 'descripcion', 'fecha', 'precio',
-      'ubicacion', 'maps', 'galeriaImagenes', 'galeriaPublicIds',
+      'titulo', 'descripcion', 'descripcionDetallada', 'fecha', 'precio',
+      'ubicacion', 'maps', 'galeriaImagenes', 'galeriaPublicIds', 'lineup',
       'useful_information', 'maxTicketsPorUsuario',
       'fechaInicioVenta', 'fechaFinVenta', 'categoriasIds', 'category'
     ];
@@ -88,6 +95,14 @@ const updateEvento = async (req, res) => {
         updateData[campo] = req.body[campo];
       }
     });
+
+    // Si se actualiza la descripción detallada, debe mantener el mínimo de 500 caracteres.
+    if (updateData.descripcionDetallada !== undefined &&
+        (typeof updateData.descripcionDetallada !== 'string' || updateData.descripcionDetallada.length < 500)) {
+      const error = new Error('descripcionDetallada debe tener al menos 500 caracteres');
+      error.statusCode = 400;
+      throw error;
+    }
 
     if (Object.keys(updateData).length === 0) {
       const error = new Error('No se proporcionaron campos para actualizar');

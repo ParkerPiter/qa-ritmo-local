@@ -40,9 +40,9 @@ module.exports = (sequelize, DataTypes) => {
             throw new Error('useful_information debe ser un arreglo de 6 elementos');
           }
           const [hours, a11y, water, foodTrucks, wifi, toilets] = value;
-          if (typeof hours !== 'string') throw new Error('El índice 0 (horas) debe ser string');
+          if (typeof hours !== 'string') throw new Error('Index 0 (hours) must be a string');
           for (const b of [a11y, water, foodTrucks, wifi, toilets]) {
-            if (typeof b !== 'boolean') throw new Error('Índices 1-5 deben ser boolean');
+            if (typeof b !== 'boolean') throw new Error('Index 1-5 must be boolean');
           }
         }
       }
@@ -50,6 +50,45 @@ module.exports = (sequelize, DataTypes) => {
     descripcion: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    // Descripción detallada del evento. Obligatoria y con un mínimo de 500 caracteres.
+    descripcionDetallada: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      validate: {
+        len: {
+          args: [500, Infinity],
+          msg: 'descripcionDetallada must have at least 500 characters'
+        }
+      }
+    },
+    // Lineup de artistas del evento: arreglo de objetos { nombre, imagen, link }.
+    // Cada artista se identifica por su posición en el arreglo (índice).
+    lineup: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+      validate: {
+        isValidLineup(value) {
+          if (!Array.isArray(value)) {
+            throw new Error('lineup must be an array of objects');
+          }
+          value.forEach((artista, i) => {
+            if (typeof artista !== 'object' || artista === null || Array.isArray(artista)) {
+              throw new Error(`lineup[${i}] must be an object { nombre, imagen, link }`);
+            }
+            if (typeof artista.nombre !== 'string' || artista.nombre.trim() === '') {
+              throw new Error(`lineup[${i}].nombre is required and must be a string`);
+            }
+            if (artista.imagen != null && typeof artista.imagen !== 'string') {
+              throw new Error(`lineup[${i}].imagen must be a string`);
+            }
+            if (artista.link != null && typeof artista.link !== 'string') {
+              throw new Error(`lineup[${i}].link must be a string`);
+            }
+          });
+        }
+      }
     },
     organizadorId: {
       type: DataTypes.INTEGER,

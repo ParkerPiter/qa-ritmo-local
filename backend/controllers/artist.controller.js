@@ -19,12 +19,18 @@ async function createEvento(req, res) {
   try {
     const {
       titulo, ubicacion, maps, fecha,
-      galeriaImagenes, descripcion,
-      useful_information, organizadorId, precio
+      galeriaImagenes, descripcion, descripcionDetallada,
+      lineup, useful_information, organizadorId, precio
     } = req.body;
 
-    if (!titulo || !fecha || !galeriaImagenes || !descripcion || !organizadorId || precio === undefined) {
-      const error = new Error('Faltan campos requeridos: titulo, fecha, galeriaImagenes, descripcion, organizadorId, precio');
+    if (!titulo || !fecha || !galeriaImagenes || !descripcion || !descripcionDetallada || !organizadorId || precio === undefined) {
+      const error = new Error('Faltan campos requeridos: titulo, fecha, galeriaImagenes, descripcion, descripcionDetallada, organizadorId, precio');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (typeof descripcionDetallada !== 'string' || descripcionDetallada.length < 500) {
+      const error = new Error('descripcionDetallada debe tener al menos 500 caracteres');
       error.statusCode = 400;
       throw error;
     }
@@ -35,7 +41,8 @@ async function createEvento(req, res) {
 
     const evento = await eventoService.createEvento(organizadorId, {
       titulo, ubicacion, maps, fecha,
-      galeriaImagenes, descripcion,
+      galeriaImagenes, descripcion, descripcionDetallada,
+      lineup: lineup || [],
       useful_information, precio,
       partnerUserId
     });

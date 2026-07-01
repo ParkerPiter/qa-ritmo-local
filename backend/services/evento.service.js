@@ -103,6 +103,8 @@ class EventoService {
       id: evento.id,
       titulo: evento.titulo,
       descripcion: evento.descripcion,
+      descripcionDetallada: evento.descripcionDetallada,
+      lineup: evento.lineup,
       useful_information: evento.useful_information,
       maps: evento.maps,
       ubicacion: evento.ubicacion,
