@@ -113,31 +113,80 @@ async function sendContactEmail(params) {
 
 /**
  * Envía un correo de confirmación al usuario cuando solicita un cambio de rol.
+ * Replica el diseño "You're in the queue!" (tema oscuro, tarjeta de detalles).
  * @param {string} to - Email del usuario
  * @param {string} fullName - Nombre completo del usuario
- * @param {string} rolSolicitado - Rol al que aplica ('artist' | 'partner' | 'promoter')
+ * @param {string} rolSolicitado - Rol al que aplica ('artist' | 'partner' | 'promoter' | 'venue')
  * @param {string} fechaSolicitud - Fecha de la solicitud (ISO string)
+ * @param {string} [instagram] - Handle de Instagram (opcional; solo se muestra si se provee)
  * @returns {Promise}
  */
-async function sendRoleRequestConfirmation(to, fullName, rolSolicitado, fechaSolicitud) {
-  const ROL_LABELS = { artist: 'Artista', partner: 'Partner', promoter: 'Promoter', venue: 'Venue' };
+async function sendRoleRequestConfirmation(to, fullName, rolSolicitado, fechaSolicitud, instagram) {
+  const ROL_LABELS = { artist: 'Artist', partner: 'Partner', promoter: 'Promoter', venue: 'Venue' };
   const rolLabel = ROL_LABELS[rolSolicitado] || 'Partner';
-  const fecha = new Date(fechaSolicitud).toLocaleDateString('es-ES', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const firstName = (fullName || '').trim().split(/\s+/)[0] || 'there';
+  const igHandle = instagram
+    ? (String(instagram).trim().startsWith('@') ? String(instagram).trim() : `@${String(instagram).trim()}`)
+    : null;
+
+  // Fila de detalle reutilizable. `last` omite el borde inferior.
+  const detailRow = (label, value, last = false) => `
+    <tr>
+      <td style="padding:18px 0;${last ? '' : 'border-bottom:1px solid #3a3a3a;'}font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#b5b5b5;">${label}</td>
+      <td align="right" style="padding:18px 0;${last ? '' : 'border-bottom:1px solid #3a3a3a;'}font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#f2f0ea;font-weight:600;">${value}</td>
+    </tr>`;
+
+  const detailRows = [
+    detailRow('Name', fullName || '—'),
+    detailRow('Requested as', rolLabel, !igHandle),
+  ];
+  if (igHandle) detailRows.push(detailRow('Instagram', igHandle, true));
 
   const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_ADMIN,
     to: [to],
-    subject: `Change role to ${rolLabel} request received`,
+    subject: `You're in the queue — ${rolLabel} request received`,
     html: `
-      <h2>Hi ${fullName},</h2>
-      <p>We have received your request to change your role to <strong>${rolLabel}</strong>.</p>
-      <p><strong>Request date:</strong> ${fecha}</p>
-      <p>Our team will review your request and notify you once there is a response.</p>
-      <br>
-      <p>Thank you for being part of our community.</p>
-      <p>— The Silver Glider Tickets Team</p>
+    <body style="margin:0;padding:0;background-color:#0f0f0f;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f0f0f;">
+        <tr>
+          <td align="center" style="padding:32px 16px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#1c1c1c;border-radius:16px;">
+              <tr>
+                <td style="padding:40px 40px 8px 40px;">
+                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:2px;color:#c9c6be;text-transform:uppercase;">Silver Glider</div>
+                  <h1 style="margin:28px 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.2;color:#f6f4ee;font-weight:600;">You're in the queue!</h1>
+                  <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#9a9a9a;">Hey ${firstName} — we received your request. Our team will review it and get back to you within 24 hours.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 40px 8px 40px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#212121;border:1px solid #333333;border-radius:14px;">
+                    <tr>
+                      <td style="padding:8px 28px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                          ${detailRows.join('')}
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 40px 28px 40px;">
+                  <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#8f8f8f;">Once approved you'll get full publishing access — create events, build your public profiles, and start selling tickets.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:24px 40px 36px 40px;border-top:1px solid #2b2b2b;">
+                  <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6f6f6f;">Silver Glider Tickets · San Francisco</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
     `
   });
 
