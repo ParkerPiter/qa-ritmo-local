@@ -14,11 +14,12 @@
  */
 require('dotenv').config();
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.error('❌ STRIPE_SECRET_KEY no está configurada en .env');
+const { stripe, stripeMode, isProduction } = require('../config/stripe');
+
+if (!stripe) {
+  console.error(`❌ No hay llave secreta de Stripe configurada para STRIPE_MODE=${stripeMode}`);
   process.exit(1);
 }
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 function printAccount(account) {
   const onboardingDone = account.details_submitted && account.charges_enabled;
@@ -49,7 +50,7 @@ function printAccount(account) {
 }
 
 async function main() {
-  console.log(`🔑 Modo Stripe: ${process.env.STRIPE_SECRET_KEY.startsWith('sk_test') ? 'TEST / sandbox' : 'LIVE'}`);
+  console.log(`🔑 Modo Stripe: ${isProduction ? 'LIVE' : 'TEST / sandbox'} (STRIPE_MODE=${stripeMode})`);
 
   const idArg = process.argv.slice(2).find(a => a.startsWith('acct_'));
 

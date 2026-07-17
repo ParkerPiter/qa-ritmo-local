@@ -1,8 +1,6 @@
-// Verificar que la clave de Stripe existe antes de inicializar
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('⚠️  STRIPE_SECRET_KEY no configurada. Los pagos no funcionarán.');
-}
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+// La instancia y el webhook secret salen del config central, que elige las
+// credenciales Test o Live según STRIPE_MODE.
+const { stripe, STRIPE_WEBHOOK_SECRET } = require('../config/stripe');
 const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
 const ticketingService = require('../services/ticketing.service');
@@ -328,7 +326,7 @@ const handleCancel = async (req, res) => {
 // Stripe Webhook - Handles automatic events from the Stripe server
 const handleWebhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const endpointSecret = STRIPE_WEBHOOK_SECRET;
 
     let event;
 

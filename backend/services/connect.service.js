@@ -1,7 +1,4 @@
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('⚠️  STRIPE_SECRET_KEY no configurada. El servicio Connect no funcionará.');
-}
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+const { stripe, warnIfModeMismatch } = require('../config/stripe');
 
 const { Op } = require('sequelize');
 const { User, Order, Evento } = require('../schemas');
@@ -10,6 +7,18 @@ const { User, Order, Evento } = require('../schemas');
 // Cualquier usuario con uno de estos roles puede crear su cuenta Express, recibir
 // pagos por sus eventos y consultar el historial de payouts.
 const STRIPE_PAYEE_ROLES = ['artist', 'partner', 'promoter', 'venue'];
+
+// Consulta una cuenta Connect explicando el error si el acct_ es del modo Stripe
+// contrario (BD con datos de Test operando en Live o viceversa). Stripe solo dice
+// "No such account", que sin contexto parece un ID corrupto en la BD.
+const retrieveAccount = async (accountId) => {
+  try {
+    return await stripe.accounts.retrieve(accountId);
+  } catch (err) {
+    warnIfModeMismatch(err, accountId);
+    throw err;
+  }
+};
 
 class ConnectService {
   /**
@@ -87,7 +96,7 @@ class ConnectService {
       throw error;
     }
 
-    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+    const account = await retrieveAccount(user.stripeAccountId);
     const onboardingDone = account.details_submitted && account.charges_enabled;
 
     await user.update({ stripeOnboardingDone: onboardingDone });
@@ -150,7 +159,7 @@ class ConnectService {
     // webhook. Una vez en true, esta rama no se vuelve a ejecutar.
     if (stripe && user.stripeAccountId && !user.stripeOnboardingDone) {
       try {
-        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+        const account = await retrieveAccount(user.stripeAccountId);
         const onboardingDone = account.details_submitted && account.charges_enabled;
         if (onboardingDone) {
           await user.update({ stripeOnboardingDone: true });
@@ -238,7 +247,7 @@ class ConnectService {
 
     if (!stripe) return;
 
-    const account = await stripe.accounts.retrieve(stripeAccountId);
+    const account = await retrieveAccount(stripeAccountId);
     const onboardingDone = account.details_submitted && account.charges_enabled;
 
     await user.update({ stripeOnboardingDone: onboardingDone });

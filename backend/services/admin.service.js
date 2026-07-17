@@ -3,7 +3,7 @@ const { Admin, User, SolicitudRol, Order, Evento } = require('../schemas');
 const authService = require('./auth.service');
 const artistService = require('./artist.service');
 
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+const { stripe } = require('../config/stripe');
 
 const ROLES_PERMITIDOS = ['client', 'admin', 'partner', 'artist', 'promoter', 'venue'];
 
