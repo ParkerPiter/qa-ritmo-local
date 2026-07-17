@@ -380,7 +380,7 @@ async function seed() {
             lineup,
             useful_information: usefulInfo,
             organizadorId: Math.random() > 0.5 ? organizador1.id : organizador2.id,
-            precio: eventoData.type === 'Free' ? 0 : Math.floor(Math.random() * 100) + 20,
+            precio: eventoData.type === 'Free' ? 0 : Math.floor(Math.random() * 15) + 1,
             fechaInicioVenta,
             fechaFinVenta,
             maxTicketsPorUsuario: eventoData.maxTickets || null,
