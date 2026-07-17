@@ -1,0 +1,15 @@
+{
+  "client": "Thunder Client",
+  "environmentName": "Ritmo Local — Local",
+  "dateExported": "2026-07-09T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "requests": [],
+  "variables": [
+    { "name": "baseUrl", "value": "http://localhost:3001" },
+    { "name": "testEmail", "value": "adrian.sgone@gmail.com" },
+    { "name": "adminEmail", "value": "silverglidertickets@gmail.com" },
+    { "name": "adminPassword", "value": "CAMBIAME" },
+    { "name": "adminToken", "value": "" }
+  ]
+}
