@@ -14,6 +14,10 @@ userRoutes.post('/create', userController.createUser);
 userRoutes.post('/login', userController.loginUser);
 userRoutes.post('/login-google', userController.loginWithGoogle);
 
+// Flujo "olvidé mi contraseña": pública porque el usuario no está logueado.
+// La autoriza el resetToken que emite /api/verificacion/verify-token, no un JWT de sesión.
+userRoutes.post('/reset-password', userController.resetPassword);
+
 // ============ RUTAS PROTEGIDAS (requieren autenticación) ============
 
 // Perfil del usuario

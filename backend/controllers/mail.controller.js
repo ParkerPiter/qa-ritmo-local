@@ -1,6 +1,7 @@
 const tokens = {};
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 const { generate4DigitToken, sendLoginToken, sendContactEmail } = require('../mail/mailconfig');
+const authService = require('../services/auth.service');
 
 async function sendToken (req, res) {
  const { email } = req.body;
@@ -34,8 +35,18 @@ async function verifyToken (req, res) {
   }
 
   if (entry.code === token) {
+    // El código es de un solo uso: se borra y se canjea por un resetToken con la
+    // misma vigencia. Sin esto la verificación no dejaba rastro y el paso siguiente
+    // (cambiar la contraseña) no tenía forma de probar que el email fue validado.
     delete tokens[email];
-    return res.json({ success: true, message: 'Correct code' });
+    const resetToken = authService.generatePasswordResetToken(email);
+
+    return res.json({
+      success: true,
+      message: 'Correct code',
+      resetToken,
+      expiresIn: authService.passwordResetTtlSeconds,
+    });
   }
 
   return res.status(400).json({ success: false, message: 'Incorrect code' });

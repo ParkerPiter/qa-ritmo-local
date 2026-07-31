@@ -1,4 +1,5 @@
 const userService = require('../services/user.service');
+const authService = require('../services/auth.service');
 const { handleSuccess, handleError } = require('../utils/responseHandler');
 
 /**
@@ -165,6 +166,42 @@ async function updateUser(req, res) {
     
     await userService.updatePassword(email, newPassword);
     
+    handleSuccess(res, {
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+/**
+ * Restablece la contraseña en el flujo "olvidé mi contraseña".
+ *
+ * Ruta pública a propósito: el usuario no puede estar logueado. La prueba de
+ * identidad es el `resetToken` que devuelve POST /api/verificacion/verify-token
+ * tras validar el código de 4 dígitos enviado por email. El email sale del token,
+ * nunca del body: así nadie puede restablecer la contraseña de otra cuenta.
+ */
+async function resetPassword(req, res) {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+      const error = new Error('Reset token and new password are required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (newPassword.length < 7) {
+      const error = new Error('The new password must be at least 7 characters long');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const email = authService.verifyPasswordResetToken(resetToken);
+
+    await userService.updatePassword(email, newPassword);
+
     handleSuccess(res, {
       message: 'Password updated successfully'
     });
@@ -371,6 +408,7 @@ module.exports = {
   updateProfile,
   updatePassword,
   updateUser,
+  resetPassword,
   updateRole,
   requestRoleChange,
   addFavorite,
