@@ -6,3 +6,5 @@
 logs
 # Dependency directories
 node_modules/.
+#Markdown files
+*.md

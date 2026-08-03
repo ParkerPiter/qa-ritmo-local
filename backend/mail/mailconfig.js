@@ -243,10 +243,77 @@ async function sendDisputeNotification(dispute) {
   return data;
 }
 
+/**
+ * Alerta inmediata a soporte cuando un webhook de Stripe NO se procesa con éxito
+ * (fallo de verificación de firma → 400, o error procesando el evento → 500).
+ *
+ * Pensado para enterarnos en el acto de que el webhook dejó de responder — el tipo
+ * de caída que, sin alerta, tardó 9 días en detectarse y terminó con el endpoint
+ * deshabilitado por Stripe.
+ *
+ * En un fallo de firma los datos vienen del body SIN verificar (best-effort): se
+ * incluyen igual como pista, marcados como no confiables.
+ *
+ * @param {Object} p
+ * @param {string} p.failureType - 'signature-verification' | 'processing'
+ * @param {string} p.errorMessage - Mensaje del error capturado
+ * @param {number} [p.httpStatus] - Código HTTP devuelto a Stripe (400 / 500)
+ * @param {string} [p.stripeMode] - Modo activo (develop | production)
+ * @param {boolean} [p.verified] - Si los datos provienen de un evento verificado
+ * @param {string} [p.eventType] - Tipo de evento Stripe (checkout.session.completed, …)
+ * @param {string} [p.objectId] - ID del objeto (cs_… / pi_… / …)
+ * @param {number} [p.amount] - Monto en centavos
+ * @param {string} [p.currency] - Moneda
+ * @param {string} [p.email] - Email del comprador si se pudo extraer
+ * @param {string} [p.paymentIntent] - ID del payment intent si aplica
+ * @returns {Promise}
+ */
+async function sendWebhookFailureAlert(p) {
+  const to = process.env.SUPPORT_EMAIL || process.env.EMAIL_ADMIN;
+  const monto = typeof p.amount === 'number'
+    ? `${(p.amount / 100).toFixed(2)} ${(p.currency || '').toUpperCase()}`
+    : '—';
+  const row = (label, value) =>
+    `<tr><td style="padding:6px 12px;"><strong>${label}:</strong></td><td style="padding:6px 12px;">${value ?? '—'}</td></tr>`;
+
+  const { data, error } = await resend.emails.send({
+    from: process.env.EMAIL_ADMIN,
+    to: [to],
+    subject: `🔴 Webhook Stripe falló (${p.httpStatus || '?'}) — ${p.eventType || p.failureType}`,
+    html: `
+      <h2>🔴 Un webhook de Stripe no se procesó</h2>
+      <p>Stripe no recibió una respuesta exitosa. Si esto se repite, Stripe puede deshabilitar el endpoint.</p>
+      <table style="border-collapse: collapse; margin: 16px 0;">
+        ${row('Tipo de fallo', p.failureType)}
+        ${row('HTTP devuelto', p.httpStatus)}
+        ${row('Modo Stripe', p.stripeMode)}
+        ${row('Evento', p.eventType)}
+        ${row('Objeto', p.objectId)}
+        ${row('Payment Intent', p.paymentIntent)}
+        ${row('Monto', monto)}
+        ${row('Comprador', p.email)}
+        ${row('Error', p.errorMessage)}
+      </table>
+      ${p.verified === false
+        ? '<p style="color:#b00;"><strong>⚠️ Datos sin verificar:</strong> la firma no validó, así que los campos de la transacción provienen del body crudo y no son confiables.</p>'
+        : ''}
+      <p>Revisá <a href="https://dashboard.stripe.com/webhooks">Webhooks en Stripe</a> y los logs del backend.</p>
+      <p style="color:#888;font-size:12px;">Alerta con anti-flood: se envía como máximo una por ventana y tipo de fallo, no una por evento.</p>
+    `
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 module.exports = {
   generate4DigitToken,
   sendLoginToken,
   sendContactEmail,
   sendRoleRequestConfirmation,
   sendDisputeNotification,
+  sendWebhookFailureAlert,
 };

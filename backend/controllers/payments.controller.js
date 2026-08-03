@@ -1,10 +1,10 @@
 // La instancia y el webhook secret salen del config central, que elige las
 // credenciales Test o Live según STRIPE_MODE.
-const { stripe, STRIPE_WEBHOOK_SECRET } = require('../config/stripe');
+const { stripe, STRIPE_WEBHOOK_SECRET, stripeMode } = require('../config/stripe');
 const orderService = require('../services/order.service');
 const connectService = require('../services/connect.service');
 const ticketingService = require('../services/ticketing.service');
-const { sendDisputeNotification } = require('../mail/mailconfig');
+const { sendDisputeNotification, sendWebhookFailureAlert } = require('../mail/mailconfig');
 const { Order, Evento, User } = require('../schemas');
 const { calculateApplicationFee } = require('../utils/stripeFees');
 
@@ -323,6 +323,48 @@ const handleCancel = async (req, res) => {
     }
 };
 
+// Anti-flood de alertas de webhook. Un secret mal configurado hace fallar la firma
+// en TODOS los eventos: sin throttle serían miles de correos (y Resend nos bloquearía).
+// Guardamos el último envío por "tipo de fallo" y sólo reenviamos pasada la ventana.
+// En memoria: se reinicia con el proceso y no se comparte entre instancias — aceptable
+// para una alerta (peor caso: unos pocos correos de más), mismo trade-off que los
+// tokens de login en memoria.
+const WEBHOOK_ALERT_WINDOW_MS = 15 * 60 * 1000; // 15 min por tipo de fallo
+const lastWebhookAlertAt = new Map();
+
+// Extrae, en best-effort, unos pocos datos de la transacción desde un evento Stripe
+// (verificado) o desde el body crudo parseado (firma fallida). Nunca lanza.
+const extractWebhookAlertData = (parsed) => {
+    const obj = parsed?.data?.object || {};
+    const paymentIntent = typeof obj.payment_intent === 'string' ? obj.payment_intent : null;
+    return {
+        eventType: parsed?.type || null,
+        objectId: obj.id || null,
+        amount: typeof obj.amount_total === 'number' ? obj.amount_total
+              : (typeof obj.amount === 'number' ? obj.amount : undefined),
+        currency: obj.currency || null,
+        email: obj.customer_email || obj.customer_details?.email || obj.receipt_email || null,
+        paymentIntent
+    };
+};
+
+// Dispara la alerta a soporte respetando el throttle. Fire-and-forget: nunca bloquea
+// ni demora la respuesta a Stripe, y un fallo del correo no rompe el webhook.
+const notifyWebhookFailure = (throttleKey, payload) => {
+    const now = Date.now();
+    const last = lastWebhookAlertAt.get(throttleKey) || 0;
+    if (now - last < WEBHOOK_ALERT_WINDOW_MS) {
+        console.warn(`🔕 Alerta de webhook suprimida por throttle (${throttleKey}).`);
+        return;
+    }
+    lastWebhookAlertAt.set(throttleKey, now);
+
+    Promise.resolve()
+        .then(() => sendWebhookFailureAlert({ stripeMode, ...payload }))
+        .then(() => console.log(`📧 Alerta de fallo de webhook enviada a soporte (${throttleKey}).`))
+        .catch(err => console.error('⚠️  No se pudo enviar la alerta de webhook:', err.message));
+};
+
 // Stripe Webhook - Handles automatic events from the Stripe server
 const handleWebhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
@@ -341,6 +383,19 @@ const handleWebhook = async (req, res) => {
         }
     } catch (err) {
         console.error('❌ Error verifying webhook:', err.message);
+
+        // Alerta inmediata a soporte: la firma no validó (típicamente secret mal
+        // configurado). Datos best-effort desde el body sin verificar.
+        let unverified = {};
+        try { unverified = extractWebhookAlertData(JSON.parse(req.body.toString())); } catch (_) {}
+        notifyWebhookFailure('signature-verification', {
+            failureType: 'signature-verification',
+            httpStatus: 400,
+            verified: false,
+            errorMessage: err.message,
+            ...unverified
+        });
+
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -522,6 +577,17 @@ const handleWebhook = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error processing webhook:', error);
+
+        // Alerta a soporte: el evento sí verificó, pero su procesamiento falló.
+        // Throttle por tipo de evento para no inundar si un handler falla en serie.
+        notifyWebhookFailure(`processing:${event.type}`, {
+            failureType: 'processing',
+            httpStatus: 500,
+            verified: true,
+            errorMessage: error.message,
+            ...extractWebhookAlertData(event)
+        });
+
         // Return 500 so Stripe retries sending
         res.status(500).json({
             success: false,
