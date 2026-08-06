@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const cloudinary = require('cloudinary').v2;
-const { sequelize, Evento, Organizador, Categoria, Admin, User } = require('../schemas');
+const { sequelize, Evento, Organizador, Categoria, Admin, User, ArtistProfile } = require('../schemas');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -63,6 +63,109 @@ const generos = [
   'Tribute / Cover Bands', 'Comedy (Stand-up / Improv / Variety)'
 ];
 const ubicaciones = ['Los Angeles', 'San Francisco'];
+
+// ── Cuentas de QA ───────────────────────────────────────────────────────────────
+// Todas comparten un único buzón real y la misma contraseña que el admin.
+// `Users.email` es UNIQUE, así que el mismo string no puede repetirse en varias
+// filas: para los roles de la tabla `Users` se usan alias `+rol` (sub-addressing de
+// Gmail), que son emails distintos para la BD pero entregan al mismo inbox.
+// `Admins` y `Organizadors` son tablas separadas con su propio login, así que ahí
+// sí se usa el email tal cual.
+const QA_EMAIL = 'denisabrakaj12@gmail.com';
+const QA_PASSWORD = 'S!lv3rGl!d3r'; // misma que el admin del seed
+const QA_USER_ROLES = ['client', 'artist', 'partner', 'promoter', 'venue'];
+const qaEmailFor = (rol) => QA_EMAIL.replace('@', `+${rol}@`);
+
+// ── Correos de prueba ───────────────────────────────────────────────────────────
+// Al final del seed se dispara UNA muestra de cada correo del sistema a esta casilla
+// para revisar los templates. Se salta con SEED_SKIP_TEST_EMAILS=true o si no hay
+// RESEND_API_KEY. Nunca corta el seed: los fallos se loguean y se sigue.
+const TEST_EMAIL_TO = 'gabriel.leal.n1@gmail.com';
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Envía una muestra de cada template a TEST_EMAIL_TO.
+ * Los correos que normalmente van al admin (contacto-admin, disputa, fallo de webhook)
+ * se redirigen con el override de destinatario; el `from` sigue siendo EMAIL_ADMIN
+ * porque es el remitente verificado en Resend.
+ */
+async function sendTestEmails() {
+  if (process.env.SEED_SKIP_TEST_EMAILS === 'true') {
+    console.log('✉️  Correos de prueba omitidos (SEED_SKIP_TEST_EMAILS=true).');
+    return;
+  }
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('⚠️  RESEND_API_KEY no configurada: se omiten los correos de prueba.');
+    return;
+  }
+
+  // require perezoso: el constructor de Resend lanza si falta la API key, así que
+  // no puede cargarse en el tope del archivo (rompería el seed sin correo configurado).
+  const mail = require('../mail/mailconfig');
+
+  const contactBase = {
+    name: 'QA Tester',
+    email: TEST_EMAIL_TO,
+    subject: 'Test message from the seed',
+    message: 'Hi,\n\nThis is a sample contact message sent by the seed script.\n\nThanks!'
+  };
+
+  const casos = [
+    ['login token', () => mail.sendLoginToken(TEST_EMAIL_TO, mail.generate4DigitToken())],
+    ['contact → admin', () => mail.sendContactEmail({ ...contactBase, toAdmin: true, adminEmail: TEST_EMAIL_TO })],
+    ['contact → copia usuario', () => mail.sendContactEmail({ ...contactBase, toAdmin: false, toUser: TEST_EMAIL_TO })],
+    ['role request (artist)', () => mail.sendRoleRequestConfirmation(TEST_EMAIL_TO, 'QA Tester', 'artist', new Date().toISOString())],
+    ['role request (venue + IG)', () => mail.sendRoleRequestConfirmation(TEST_EMAIL_TO, 'QA Tester', 'venue', new Date().toISOString(), 'qatester')],
+    ['dispute', () => mail.sendDisputeNotification({
+      id: 'dp_seed_test',
+      amount: 5000,
+      currency: 'usd',
+      reason: 'fraudulent',
+      evidenceDueBy: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+      chargeId: 'ch_seed_test',
+      orderId: 1
+    }, TEST_EMAIL_TO)],
+    ['webhook failure (firma)', () => mail.sendWebhookFailureAlert({
+      failureType: 'signature-verification',
+      errorMessage: 'No signatures found matching the expected signature for payload',
+      httpStatus: 400,
+      stripeMode: process.env.STRIPE_MODE || 'develop',
+      verified: false,
+      eventType: 'checkout.session.completed',
+      objectId: 'cs_seed_test',
+      amount: 5000,
+      currency: 'usd',
+      email: TEST_EMAIL_TO,
+      paymentIntent: 'pi_seed_test'
+    }, TEST_EMAIL_TO)],
+    ['webhook failure (procesado)', () => mail.sendWebhookFailureAlert({
+      failureType: 'processing',
+      errorMessage: 'Order not found for session cs_seed_test',
+      httpStatus: 500,
+      stripeMode: process.env.STRIPE_MODE || 'develop',
+      verified: true,
+      eventType: 'charge.refunded',
+      objectId: 'ch_seed_test',
+      amount: 5000,
+      currency: 'usd',
+      email: TEST_EMAIL_TO
+    }, TEST_EMAIL_TO)]
+  ];
+
+  console.log(`\n✉️  Enviando ${casos.length} correos de prueba a ${TEST_EMAIL_TO}...`);
+
+  for (const [nombre, enviar] of casos) {
+    try {
+      await enviar();
+      console.log(`  ✅ ${nombre}`);
+    } catch (error) {
+      console.error(`  ❌ ${nombre}: ${error.message}`);
+    }
+    // Resend limita a ~2 req/s en los planes básicos.
+    await sleep(600);
+  }
+}
 
 /**
  * Genera una fecha relativa a HOY (momento en que se corre el seed): hoy + offsetDays,
@@ -293,6 +396,30 @@ async function seed() {
     });
     console.log('Partner user seeded!');
 
+    // Crear cuentas de QA (mismo buzón, un usuario por rol del sistema)
+    const qaPasswordHash = await bcrypt.hash(QA_PASSWORD, 10);
+
+    for (const rol of QA_USER_ROLES) {
+      const qaUser = await User.create({
+        email: qaEmailFor(rol),
+        fullName: `QA ${rol}`,
+        password: qaPasswordHash,
+        rol
+      });
+
+      // Al promover a artist, el backend crea su ArtistProfile automáticamente;
+      // lo replicamos aquí para que GET /api/artist/profile responda igual.
+      if (rol === 'artist') {
+        await ArtistProfile.create({ userId: qaUser.id });
+      }
+
+      console.log(`QA user seeded: ${qaUser.email} (${rol})`);
+    }
+
+    // QA admin → login separado en POST /api/admin-user/login
+    await Admin.create({ email: QA_EMAIL, password: qaPasswordHash });
+    console.log(`QA admin seeded: ${QA_EMAIL}`);
+
     // Crear Organizadores
     const organizador1 = await Organizador.create({
       email: 'organizador1@example.com',
@@ -307,6 +434,17 @@ async function seed() {
       phone: '987654321',
       password: 'password123'
     });
+
+    // QA organizador → login separado en POST /api/organizador/login.
+    // La contraseña va hasheada porque authenticateOrganizador compara con bcrypt
+    // (los dos organizadores de arriba la guardan en texto plano y no pueden loguearse).
+    await Organizador.create({
+      email: QA_EMAIL,
+      nombreCompleto: 'QA Organizador',
+      phone: '4155550123',
+      password: qaPasswordHash
+    });
+    console.log(`QA organizador seeded: ${QA_EMAIL}`);
 
     // Crear Categorías
     const categoriasCreadas = {};
@@ -409,6 +547,9 @@ async function seed() {
     }
 
     console.log('Seeding completed successfully!');
+
+    // Al final: nunca debe bloquear la carga de datos.
+    await sendTestEmails();
   } catch (error) {
     console.error('Error seeding database:', error);
   } finally {
@@ -416,4 +557,10 @@ async function seed() {
   }
 }
 
-seed();
+// Solo se auto-ejecuta al correrlo directo (`npm run seed`). Exportado para poder
+// disparar únicamente los correos de prueba sin recrear la base.
+if (require.main === module) {
+  seed();
+}
+
+module.exports = { seed, sendTestEmails };
